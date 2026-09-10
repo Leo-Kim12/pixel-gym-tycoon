@@ -1,0 +1,2741 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>픽셀 짐 타이쿤 : 부스터 에디션 (Pixel Gym Tycoon)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DungGeunMo&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    body {
+      font-family: 'DungGeunMo', 'Inter', -apple-system, sans-serif;
+      background-color: #050811;
+      color: #e2e8f0;
+      overflow-x: hidden;
+    }
+    .pixel-btn {
+      position: relative;
+      transition: all 0.08s ease;
+      box-shadow: inset -2px -2px 0px 0px rgba(0,0,0,0.6), inset 2px 2px 0px 0px rgba(255,255,255,0.25);
+    }
+    .pixel-btn:active:not(:disabled) {
+      transform: translate(1px, 1px);
+      box-shadow: inset 2px 2px 0px 0px rgba(0,0,0,0.7);
+    }
+    .pixel-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      filter: grayscale(80%);
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 8px;
+      height: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: #080d1a;
+      border-radius: 4px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+      border: 1px solid #1e293b;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb:hover {
+      background: #f59e0b;
+    }
+    canvas {
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 0.95; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.02); }
+    }
+    .flyer-pulse {
+      animation: pulseGlow 1.8s infinite ease-in-out;
+    }
+    @keyframes feverFlame {
+      0% { box-shadow: 0 0 10px #f59e0b, inset 0 0 10px #ef4444; }
+      50% { box-shadow: 0 0 25px #ef4444, inset 0 0 18px #f59e0b; }
+      100% { box-shadow: 0 0 10px #f59e0b, inset 0 0 10px #ef4444; }
+    }
+    .fever-active-border {
+      animation: feverFlame 0.8s infinite alternate ease-in-out;
+    }
+    @keyframes disasterAlertAnim {
+      0%, 100% { background-color: rgba(225, 29, 72, 0.2); }
+      50% { background-color: rgba(225, 29, 72, 0.55); }
+    }
+    .disaster-screen-flash {
+      animation: disasterAlertAnim 0.35s infinite ease-in-out;
+    }
+
+    /* ===== Mobile / Touch Optimization ===== */
+    html {
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+    }
+    button, input, select, textarea {
+      touch-action: manipulation;
+    }
+    #canvasWrapper {
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+    @media (max-width: 639px) {
+      body {
+        min-width: 0;
+        overscroll-behavior-x: none;
+      }
+      header {
+        padding-top: max(0.45rem, env(safe-area-inset-top));
+        padding-left: max(0.55rem, env(safe-area-inset-left));
+        padding-right: max(0.55rem, env(safe-area-inset-right));
+        gap: 0.35rem;
+        flex-wrap: wrap;
+      }
+      header > div:first-child {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+      header > div:last-child {
+        width: 100%;
+        justify-content: flex-end;
+        gap: 0.35rem;
+      }
+      header > div:last-child > div:first-child {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+      header button {
+        min-width: 36px;
+        min-height: 36px;
+      }
+      #btnMissions {
+        min-width: 42px;
+      }
+      main {
+        padding: 0.4rem !important;
+        gap: 0.5rem !important;
+        padding-bottom: max(0.75rem, env(safe-area-inset-bottom)) !important;
+      }
+      #simulatorContainer {
+        height: min(54vh, 500px) !important;
+        min-height: 330px !important;
+        border-radius: 0.55rem;
+      }
+      #canvasWrapper {
+        min-height: 0 !important;
+      }
+      #gymCanvas {
+        width: 100%;
+        height: 100%;
+      }
+      #gymTitleOverlay {
+        max-width: 42vw;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      #feverBadge {
+        max-width: 48vw;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      #disasterBanner {
+        max-width: 88vw;
+        white-space: nowrap;
+      }
+      #disasterBannerText {
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      #btnClickFlyer {
+        min-height: 40px;
+        padding-left: 0.7rem;
+        padding-right: 0.7rem;
+      }
+      #btnClickFlyerLabel {
+        display: inline-block;
+        max-width: 30vw;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      aside {
+        min-height: 0 !important;
+        padding: 0.4rem !important;
+      }
+      #tabContainer {
+        min-height: 360px !important;
+        max-height: none !important;
+        padding-right: 0.15rem;
+      }
+      .tab-btn {
+        min-height: 42px;
+        font-size: 10px;
+      }
+      #missionModal, #resetModal {
+        padding: 0.45rem;
+      }
+      #missionModal > div, #resetModal > div {
+        max-height: calc(100dvh - 0.9rem);
+      }
+      #missionList {
+        max-height: 68dvh;
+      }
+      #toast {
+        bottom: max(1rem, env(safe-area-inset-bottom));
+        max-width: 90vw;
+        text-align: center;
+      }
+    }
+    @media (max-width: 380px) {
+      #gymTierBadge {
+        max-width: 90px;
+      }
+      #hudGold {
+        font-size: 10px;
+      }
+      #hudGps {
+        font-size: 9px;
+      }
+      #simulatorContainer {
+        height: min(52vh, 460px) !important;
+        min-height: 310px !important;
+      }
+      .text-\[10px\] {
+        letter-spacing: -0.02em;
+      }
+    }
+    @media (pointer: coarse) {
+      .pixel-btn {
+        -webkit-tap-highlight-color: transparent;
+      }
+      .pixel-btn:active:not(:disabled) {
+        transform: scale(0.98);
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .flyer-pulse, .fever-active-border, .disaster-screen-flash {
+        animation: none !important;
+      }
+    }
+  </style>
+</head>
+<body class="w-full min-h-screen flex flex-col bg-[#050811] overflow-x-hidden overflow-y-auto select-none">
+
+  <header class="w-full shrink-0 bg-[#0d1424] border-b-2 border-slate-800 px-3 py-2 flex items-center justify-between z-30 shadow-lg sticky top-0">
+    <div class="flex items-center gap-2 sm:gap-3 min-w-0">
+      <div class="flex items-center gap-1.5 shrink-0 cursor-pointer" id="brandLogo">
+        <span class="text-xl sm:text-2xl animate-bounce">🏋️</span>
+        <h1 class="text-xs sm:text-base font-black tracking-wider text-amber-400 drop-shadow truncate">픽셀 짐 타이쿤</h1>
+      </div>
+      <div id="gymTierBadge" class="inline-flex text-[10px] sm:text-xs bg-slate-800 text-cyan-300 px-2.5 py-0.5 rounded border border-slate-700 font-bold truncate max-w-[120px] sm:max-w-none">
+        지하 쇠맛터
+      </div>
+    </div>
+
+    <!-- Live Currency & Utility Controls -->
+    <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+      <div class="flex items-center gap-2 bg-[#090d16] px-2.5 py-1 rounded-md border border-slate-700">
+        <div class="flex items-center gap-1">
+          <span class="text-amber-400 font-bold text-xs sm:text-sm">🪙</span>
+          <span id="hudGold" class="text-xs sm:text-sm font-black text-amber-300 font-mono tracking-tight cursor-help" title="0 G">0 G</span>
+        </div>
+        <div class="h-3.5 w-px bg-slate-700"></div>
+        <div class="flex items-center gap-1">
+          <span class="text-emerald-400 text-xs font-bold">⚡</span>
+          <span id="hudGps" class="text-[10px] sm:text-xs font-bold text-emerald-400 font-mono">+0.0 G/s</span>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex items-center gap-1.5">
+        <button id="btnSoundToggle" class="pixel-btn px-2 py-1 bg-slate-800 hover:bg-slate-700 text-xs rounded border border-slate-700 text-slate-200" title="사운드 토글">
+          🔊
+        </button>
+        <button id="btnMissions" class="relative pixel-btn px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-xs rounded font-bold text-white shadow flex items-center gap-1">
+          📜 <span class="hidden sm:inline">미션 & 업적</span>
+          <span id="missionRedDot" class="hidden absolute -top-2 -right-2 min-w-[20px] h-[20px] px-1 bg-rose-500 text-white text-[10px] font-black rounded-full flex items-center justify-center animate-bounce shadow-lg ring-2 ring-rose-300 z-40">
+            0
+          </span>
+        </button>
+        <button id="btnResetData" class="pixel-btn px-2 py-1 bg-rose-900/60 hover:bg-rose-800 text-xs rounded border border-rose-700 text-rose-200" title="데이터 초기화">
+          🔄
+        </button>
+        <button id="btnFullscreen" class="pixel-btn px-2 py-1 bg-slate-800 hover:bg-slate-700 text-xs rounded border border-slate-700 text-slate-300" title="전체화면">
+          ⛶
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 w-full flex flex-col lg:flex-row p-2 sm:p-3 gap-3 overflow-visible pb-16">
+    
+    <!-- Canvas Simulator Section -->
+    <section id="simulatorContainer" class="flex-1 min-h-[360px] h-[420px] sm:h-[480px] lg:h-[540px] flex flex-col bg-[#090d16] border-2 border-slate-800 rounded-lg overflow-hidden relative shadow-inner shrink-0 lg:shrink transition-all duration-300">
+      
+      <!-- Top Overlay Bar -->
+      <div class="absolute top-2 left-2 z-10 flex items-center gap-2 pointer-events-none">
+        <span id="gymTitleOverlay" class="text-xs bg-black/85 backdrop-blur-sm text-amber-400 px-2.5 py-1 rounded border border-amber-500/40 font-bold">
+          🏢 지하 쇠맛터
+        </span>
+        <span class="text-[11px] bg-black/85 text-slate-200 px-2.5 py-1 rounded border border-slate-700">
+          회원: <span id="overlayMemberCount" class="text-cyan-400 font-bold font-mono">0</span>/<span id="overlayMaxMemberCount" class="text-slate-300 font-mono">15</span>명
+        </span>
+        <span id="feverBadge" class="hidden text-[11px] bg-rose-600 text-amber-200 px-2.5 py-1 rounded border border-amber-300 font-black animate-pulse">
+          🔥 부스터 피버 발동 중! (1.7배)
+        </span>
+      </div>
+
+      <!-- Disaster Warning Banner Overlay -->
+      <div id="disasterBanner" class="hidden absolute top-12 left-1/2 -translate-x-1/2 z-20 bg-rose-950/95 border-2 border-rose-500 text-rose-200 px-4 py-2 rounded-lg shadow-2xl flex items-center gap-2 text-xs font-bold animate-bounce pointer-events-none">
+        <span class="text-lg">🚨</span>
+        <span id="disasterBannerText">돌발 재난 발생!</span>
+      </div>
+
+      <!-- Disaster Screen Flash Overlay -->
+      <div id="disasterFlash" class="hidden absolute inset-0 z-10 pointer-events-none disaster-screen-flash"></div>
+
+      <!-- Canvas Simulator Box -->
+      <div id="canvasWrapper" class="flex-1 w-full h-full min-h-[280px] relative overflow-hidden flex items-center justify-center cursor-pointer bg-[#0a0f1c]">
+        <canvas id="gymCanvas" class="w-full h-full block"></canvas>
+      </div>
+
+      <!-- Pre-Workout Booster Energy Bar -->
+      <div class="w-full bg-[#080c18] px-2.5 py-1 border-t border-slate-800 flex items-center gap-2">
+        <span class="text-[10px] font-bold text-amber-400 whitespace-nowrap">⚡ 부스터 게이지</span>
+        <div class="flex-1 bg-slate-900 rounded-full h-3 overflow-hidden border border-slate-700 relative">
+          <div id="feverBarFill" class="h-full bg-gradient-to-r from-amber-500 via-rose-500 to-amber-400 transition-all duration-100" style="width: 0%;"></div>
+        </div>
+        <span id="feverPercentText" class="text-[10px] text-slate-300 font-mono font-bold w-10 text-right">0%</span>
+      </div>
+
+      <!-- Live Dynamic Flyer Promotion Bar -->
+      <div class="shrink-0 bg-[#0d1424] border-t-2 border-slate-800 p-2 sm:p-2.5 flex items-center justify-between gap-2 z-10">
+        <div class="flex items-center gap-2 min-w-0">
+          <div class="w-8 h-8 bg-amber-500/20 text-amber-400 rounded flex items-center justify-center text-base border border-amber-500/40 shrink-0">
+            📢
+          </div>
+          <div class="min-w-0">
+            <div class="flex items-center gap-1.5">
+              <span class="font-bold text-slate-200 text-xs">길거리 전단지 배포</span>
+              <span id="clickPowerBadge" class="text-[10px] bg-amber-500/25 text-amber-300 px-1.5 py-0.5 rounded border border-amber-500/50 font-mono font-bold">+1G</span>
+            </div>
+            <p class="text-[10px] text-slate-400 truncate">클릭 시 골드 획득, 신규 회원 즉시 유입 및 부스터 충전!</p>
+          </div>
+        </div>
+        <button id="btnClickFlyer" class="pixel-btn flyer-pulse px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs rounded shrink-0 whitespace-nowrap shadow-md flex items-center gap-1">
+          <span id="btnClickFlyerLabel">전단지 돌리기! (+1G)</span> 📄
+        </button>
+      </div>
+    </section>
+
+    <aside class="w-full lg:w-[480px] shrink-0 flex flex-col bg-[#0d1424] border-2 border-slate-800 rounded-lg p-2.5 gap-2 shadow-lg">
+      
+      <!-- Real-time Stats Header -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 p-2 bg-[#090d16] rounded border border-slate-700/80 text-[10px] shrink-0">
+        <div class="flex flex-col px-2 py-1.5 bg-slate-900/90 rounded border border-slate-800">
+          <span class="text-slate-400">⚡ 클릭 파워</span>
+          <span id="statClickPower" class="font-bold text-amber-400 font-mono text-xs">+1G</span>
+        </div>
+        <div class="flex flex-col px-2 py-1.5 bg-slate-900/90 rounded border border-slate-800">
+          <span class="text-slate-400">⏱ 회원 방문</span>
+          <span id="statSpawnRate" class="font-bold text-cyan-400 font-mono text-xs">4.5초</span>
+        </div>
+        <div class="flex flex-col px-2 py-1.5 bg-slate-900/90 rounded border border-slate-800">
+          <span class="text-slate-400">👑 VIP 확률</span>
+          <span id="statVipRate" class="font-bold text-amber-300 font-mono text-xs">5%</span>
+        </div>
+        <div class="flex flex-col px-2 py-1.5 bg-slate-900/90 rounded border border-slate-800">
+          <span class="text-slate-400">🏢 정원</span>
+          <span id="statCapacity" class="font-bold text-emerald-400 font-mono text-xs">15명</span>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <div class="grid grid-cols-4 gap-1 p-1 bg-[#090d16] rounded border border-slate-800 text-[11px] font-bold shrink-0">
+        <button id="nav-machines" class="tab-btn py-1.5 rounded bg-amber-500 text-slate-950 shadow flex items-center justify-center gap-1 font-bold" data-tab="machines">
+          <span>🏋️ 기구</span>
+        </button>
+        <button id="nav-marketing" class="tab-btn py-1.5 rounded bg-transparent hover:bg-slate-800 text-slate-300 flex items-center justify-center gap-1" data-tab="marketing">
+          <span>📢 홍보/방재</span>
+        </button>
+        <button id="nav-trainers" class="tab-btn py-1.5 rounded bg-transparent hover:bg-slate-800 text-slate-300 flex items-center justify-center gap-1" data-tab="trainers">
+          <span>👨‍🏫 코치단</span>
+        </button>
+        <button id="nav-facility" class="tab-btn py-1.5 rounded bg-transparent hover:bg-slate-800 text-slate-300 flex items-center justify-center gap-1" data-tab="facility">
+          <span>🏢 확장</span>
+        </button>
+      </div>
+
+      <!-- Dynamic Tab Content List -->
+      <div id="tabContainer" class="flex-1 min-h-[320px] max-h-[580px] overflow-y-auto overflow-x-hidden custom-scroll flex flex-col gap-1.5 pr-1 pb-4">
+        <!-- Rendered via JavaScript -->
+      </div>
+    </aside>
+  </main>
+
+  <div id="missionModal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+    <div class="w-full max-w-lg bg-[#0d1424] border-2 border-slate-700 rounded-lg shadow-2xl p-3 sm:p-4 flex flex-col gap-3">
+      <div class="flex items-center justify-between border-b border-slate-700 pb-2">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">📜</span>
+          <div>
+            <h2 class="font-bold text-sm sm:text-base text-amber-400">단계별 무한 헬스장 업적 & 미션</h2>
+            <p class="text-[10px] text-slate-400">목표 달성 시마다 막대한 골드 보상이 즉시 지급됩니다!</p>
+          </div>
+        </div>
+        <button id="btnCloseMission" class="text-slate-400 hover:text-white text-lg font-bold px-2 py-0.5">✕</button>
+      </div>
+      <div id="missionList" class="flex flex-col gap-2 max-h-[65vh] overflow-y-auto custom-scroll pr-1">
+        <!-- Mission items rendered via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Reset Confirmation Modal -->
+  <div id="resetModal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+    <div class="w-full max-w-sm bg-[#0d1424] border-2 border-rose-700 rounded-lg shadow-2xl p-4 flex flex-col gap-3 text-center">
+      <div class="text-3xl">⚠️</div>
+      <h3 class="font-bold text-rose-400 text-sm">데이터를 초기화하시겠습니까?</h3>
+      <p class="text-xs text-slate-400">모든 골드, 기구 레벨, 코치 및 확장 데이터가 처음 상태로 리셋됩니다.</p>
+      <div class="flex items-center justify-center gap-2 mt-2">
+        <button id="btnCancelReset" class="pixel-btn px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs rounded text-slate-200">취소</button>
+        <button id="btnConfirmReset" class="pixel-btn px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-xs rounded text-white font-bold">네, 초기화합니다</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Message Box -->
+  <div id="toast" class="pointer-events-none fixed bottom-14 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 border-2 border-amber-400 text-amber-300 px-4 py-2 rounded-lg text-xs font-bold shadow-2xl transition-all duration-200 opacity-0 transform translate-y-3">
+    알림
+  </div>
+
+  <script>
+    // 숫자 포맷터: 10,000 미만은 정수 콤마, 그 이상은 K, M, B, T, Qa, Qi로 축약
+    function formatNumber(num) {
+      if (num === null || num === undefined || isNaN(num)) return '0';
+      const abs = Math.abs(num);
+      if (abs < 10000) {
+        return Math.floor(num).toLocaleString('ko-KR');
+      }
+      const units = [
+        { val: 1e18, symbol: 'Qi' },
+        { val: 1e15, symbol: 'Qa' },
+        { val: 1e12, symbol: 'T' },
+        { val: 1e9,  symbol: 'B' },
+        { val: 1e6,  symbol: 'M' },
+        { val: 1e3,  symbol: 'K' }
+      ];
+      for (let i = 0; i < units.length; i++) {
+        if (abs >= units[i].val) {
+          const formatted = (num / units[i].val).toFixed(2).replace(/\.00$/, '').replace(/(\.[0-9])0$/, '$1');
+          return `${formatted}${units[i].symbol}`;
+        }
+      }
+      return Math.floor(num).toLocaleString('ko-KR');
+    }
+
+    function formatGps(num) {
+      if (num < 1000) return num.toFixed(1);
+      return formatNumber(num);
+    }
+
+    let soundEnabled = true;
+    let audioCtx = null;
+
+    function getAudioContext() {
+      if (!audioCtx) {
+        const AudioClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioClass) audioCtx = new AudioClass();
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      return audioCtx;
+    }
+
+    function playSfx(type) {
+      if (!soundEnabled) return;
+      try {
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        if (type === 'coin') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(980, now);
+          osc.frequency.exponentialRampToValueAtTime(1960, now + 0.07);
+          gain.gain.setValueAtTime(0.18, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
+          osc.start(now);
+          osc.stop(now + 0.07);
+        } else if (type === 'upgrade') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(440, now);
+          osc.frequency.setValueAtTime(659, now + 0.07);
+          osc.frequency.setValueAtTime(880, now + 0.14);
+          gain.gain.setValueAtTime(0.25, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
+          osc.start(now);
+          osc.stop(now + 0.24);
+        } else if (type === 'clank') {
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(180, now);
+          osc.frequency.exponentialRampToValueAtTime(45, now + 0.09);
+          gain.gain.setValueAtTime(0.12, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+          osc.start(now);
+          osc.stop(now + 0.09);
+        } else if (type === 'fever') {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(300, now);
+          osc.frequency.exponentialRampToValueAtTime(1200, now + 0.35);
+          gain.gain.setValueAtTime(0.28, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+          osc.start(now);
+          osc.stop(now + 0.35);
+        } else if (type === 'siren') {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(400, now);
+          osc.frequency.linearRampToValueAtTime(850, now + 0.25);
+          osc.frequency.linearRampToValueAtTime(400, now + 0.50);
+          gain.gain.setValueAtTime(0.25, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.55);
+          osc.start(now);
+          osc.stop(now + 0.55);
+        }
+      } catch (e) {}
+    }
+
+    const STORAGE_KEY = 'pixel_gym_tycoon_save_v2';
+
+    const GymState = {
+      gold: 0,
+      totalEarned: 0,
+      flyerClicks: 0,
+      vipServedCount: 0,
+      activeTab: 'machines',
+      currentTierIndex: 0,
+      maxMembers: 15,
+
+      // Pre-Workout Fever Mode State (난이도 상향: 충전율 감소, 지속시간 10초)
+      feverGauge: 0,
+      feverActive: false,
+      feverTimer: 0,
+
+      // Disaster Cooldown & Timers
+      disasterCooldown: 45, // 첫 재난 전 최소 45초 안전시간
+      activeDisasterTimer: 0,
+
+      // 8 Mega Facility Expansion Tiers (확장 비용 상향)
+      tiers: [
+        { name: '지하 쇠맛터', maxMembers: 15, cost: 0, desc: '거친 쇠 냄새가 물씬 풍기는 지하 1층 아지트' },
+        { name: '2층 쾌적 채광 피트니스', maxMembers: 35, cost: 1200, desc: '햇살이 비치는 채광 통창과 맑은 하늘 뷰' },
+        { name: '골드 스트렝스 클럽', maxMembers: 70, cost: 8500, desc: '황금 몰딩과 대리석 바닥의 럭셔리 쇠질 명소' },
+        { name: '월드 하이엔드 메가 타워', maxMembers: 120, cost: 55000, desc: '도심 초고층 마천루 파노라마 야경과 사이버 조명' },
+        { name: '미스터 올림피아 아레나', maxMembers: 200, cost: 320000, desc: '황금 기둥과 샌도우 트로피가 빛나는 전설의 성지' },
+        { name: '에메랄드 스카이 가든', maxMembers: 320, cost: 1800000, desc: '초호화 유리 돔 온실과 옥상 정원이 결합된 휴양 짐' },
+        { name: '글로벌 프랜차이즈 본부', maxMembers: 500, cost: 9500000, desc: '세계 각국 회원들이 찾아오는 글로벌 피트니스 본부' },
+        { name: '우주 무중력 궤도 아레나', maxMembers: 800, cost: 50000000, desc: '지구 궤도 우주 정거장에서 즐기는 무중력 익스트림 쇠질' }
+      ],
+
+      // 14 Gym Equipments (난이도 상향: 기본 수익 하향, 비용 인플레 가속)
+      machines: [
+        { id: 'dumbbell', name: '덤벨 세트', type: 'free', level: 1, unlocked: true, baseCost: 20, baseGps: 0.4, icon: '🏋️' },
+        { id: 'treadmill', name: '러닝머신', type: 'cardio', level: 0, unlocked: false, baseCost: 110, baseGps: 1.6, icon: '🏃' },
+        { id: 'bench', name: '벤치프레스', type: 'free', level: 0, unlocked: false, baseCost: 450, baseGps: 5.5, icon: '💪' },
+        { id: 'lat_pulldown', name: '랫풀다운', type: 'machine', level: 0, unlocked: false, baseCost: 1400, baseGps: 15.0, icon: '🦾' },
+        { id: 'squat', name: '스쿼트 랙', type: 'free', level: 0, unlocked: false, baseCost: 4200, baseGps: 40.0, icon: '🦵' },
+        { id: 'leg_press', name: '레그프레스 머신', type: 'machine', level: 0, unlocked: false, baseCost: 12500, baseGps: 105.0, icon: '🦿' },
+        { id: 'cable', name: '케이블 크로스오버', type: 'machine', level: 0, unlocked: false, baseCost: 36000, baseGps: 280.0, icon: '⛓️' },
+        { id: 'stair', name: '천국의 계단', type: 'cardio', level: 0, unlocked: false, baseCost: 110000, baseGps: 780.0, icon: '🪜' },
+        { id: 'rowing', name: '로잉머신', type: 'cardio', level: 0, unlocked: false, baseCost: 320000, baseGps: 2100.0, icon: '🚣' },
+        { id: 'boxing', name: '샌드백 복싱 존', type: 'cardio', level: 0, unlocked: false, baseCost: 950000, baseGps: 5800.0, icon: '🥊' },
+        { id: 'pilates', name: '필라테스 리포머', type: 'machine', level: 0, unlocked: false, baseCost: 2600000, baseGps: 15000.0, icon: '🧘' },
+        { id: 'protein_bar', name: '프로틴 쉐이크 바', type: 'all', level: 0, unlocked: false, baseCost: 7500000, baseGps: 40000.0, icon: '🥤' },
+        { id: 'cryo', name: '크라이오 냉각 챔버', type: 'all', level: 0, unlocked: false, baseCost: 22000000, baseGps: 110000.0, icon: '❄️' },
+        { id: 'sauna', name: '핀란드 건식 사우나', type: 'all', level: 0, unlocked: false, baseCost: 65000000, baseGps: 310000.0, icon: '🧖' }
+      ],
+
+      // Marketing & Disaster Prevention Systems
+      marketing: [
+        { id: 'flyer_quality', name: '전단지 코팅 & 할인권', level: 0, baseCost: 35, costMult: 1.30, bonusPerLv: 1, desc: '클릭당 획득 골드 영구 증가 (+1G씩)' },
+        { id: 'insurance', name: '종합 영업배상 책임보험', level: 0, maxLevel: 5, baseCost: 500, costMult: 2.2, desc: '재해 발생 시 골드 손실률 12%씩 경감 (최대 60% 방어)' },
+        { id: 'disaster_system', name: '첨단 스마트 방재 설비', level: 0, maxLevel: 5, baseCost: 1200, costMult: 2.5, desc: '자연재해 및 돌발사고 발생 확률 10%씩 억제' },
+        { id: 'sns_ad', name: 'SNS 릴스 바이럴 홍보', level: 0, baseCost: 180, costMult: 1.35, desc: '신규 회원 방문 주기 단축' },
+        { id: 'vip_pass', name: 'VIP 골드 회원권 모집', level: 0, baseCost: 800, costMult: 1.40, desc: 'VIP 회원 방문 확률 증가 (퇴장 팁 1.8배)' },
+        { id: 'influencer', name: '인플루언서 헬스타그램 협찬', level: 0, baseCost: 4500, costMult: 1.50, desc: '모든 기구 초당 수익 +7% 영구 증폭' },
+        { id: 'body_profile', name: '바디프로필 스튜디오 제휴', level: 0, baseCost: 20000, costMult: 1.55, desc: '회원 퇴장 시 추가 결제 팁 +10% 증폭' }
+      ],
+
+      // Trainers with Stackable Squad Recruitment (비용 상승 조정)
+      trainers: [
+        { id: 'trainer_kim', name: '김관장', count: 0, baseCost: 600, costMult: 1.48, boostType: 'free', multPerHire: 0.18, icon: '👨‍🏫', desc: '프리웨이트 수익 +18%' },
+        { id: 'trainer_lee', name: '이지은 코치', count: 0, baseCost: 3200, costMult: 1.50, boostType: 'cardio', multPerHire: 0.20, icon: '👩‍🏫', desc: '유산소 기구 수익 +20%' },
+        { id: 'trainer_choi', name: '최머신 코치', count: 0, baseCost: 15000, costMult: 1.52, boostType: 'machine', multPerHire: 0.20, icon: '🤖', desc: '머신 기구 수익 +20%' },
+        { id: 'trainer_sarah', name: '사라 코치', count: 0, baseCost: 65000, costMult: 1.55, boostType: 'machine', multPerHire: 0.22, icon: '🤸‍♀️', desc: '체형/필라테스/머신 수익 +22%' },
+        { id: 'trainer_park', name: '마동석 총괄코치', count: 0, baseCost: 280000, costMult: 1.60, boostType: 'all', multPerHire: 0.25, icon: '🦁', desc: '모든 기구 전체 수익 +25%' }
+      ],
+
+      // Natural & Facility Disasters Definitions
+      disasterTypes: [
+        {
+          id: 'pipe_burst',
+          name: '천장 누수 & 배관 파열! 🌊',
+          desc: '지하 배관이 터져 천장에서 흙탕물이 쏟아집니다! 긴급 수리비가 청구됩니다.',
+          lossPct: 0.22,
+          minLoss: 60
+        },
+        {
+          id: 'blackout',
+          name: '폭염 속 대형 정전 발생! ⚡',
+          desc: '에어컨과 조명이 꺼져 회원들이 비명을 지르며 탈출합니다! 비상 발전 비용이 청구됩니다.',
+          lossPct: 0.28,
+          minLoss: 120,
+          scareMembers: true
+        },
+        {
+          id: 'dumbbell_drop',
+          name: '고중량 덤벨 낙하 사고! 💥',
+          desc: '회원이 30kg 덤벨을 바닥에 떨어뜨려 타일이 박살나고 부상 합의금을 배상합니다.',
+          lossPct: 0.18,
+          minLoss: 80
+        },
+        {
+          id: 'safety_inspection',
+          name: '소방·위생 불시 합동 점검! 🚨',
+          desc: '환기구 청결 및 소방 규정 지적을 받아 막대한 과태료가 부과되었습니다.',
+          lossPct: 0.20,
+          minLoss: 100
+        },
+        {
+          id: 'locker_theft',
+          name: '라커룸 털이범 침입! 🦹',
+          desc: '라커룸 도난 사건이 발생하여 센터에서 피해액 전액을 긴급 보상합니다.',
+          lossPct: 0.25,
+          minLoss: 90
+        }
+      ],
+
+      missions: [
+        {
+          id: 'flyer_master',
+          title: '전단지 배포 장인',
+          desc: (target) => `전단지 누적 ${formatNumber(target)}회 배포`,
+          icon: '📄',
+          stage: 0,
+          targets: [10, 30, 80, 200, 500, 1200, 3000, 8000, 25000, 100000],
+          rewards: [100, 350, 1200, 4500, 15000, 55000, 200000, 750000, 3000000, 15000000],
+          getProgress: () => GymState.flyerClicks
+        },
+        {
+          id: 'machine_levels',
+          title: '기구 시설 확충',
+          desc: (target) => `기구 레벨 총합 Lv.${target} 달성`,
+          icon: '🏋️',
+          stage: 0,
+          targets: [5, 15, 35, 75, 150, 300, 600, 1200, 2500, 5000],
+          rewards: [150, 500, 2000, 8000, 32000, 130000, 550000, 2200000, 9000000, 40000000],
+          getProgress: () => GymState.machines.reduce((s, m) => s + (m.unlocked ? m.level : 0), 0)
+        },
+        {
+          id: 'trainer_squad',
+          title: '코치 군단 양성',
+          desc: (target) => `코치 총 ${target}명 고용하기`,
+          icon: '👨‍🏫',
+          stage: 0,
+          targets: [1, 3, 6, 12, 25, 50, 100, 200],
+          rewards: [500, 2500, 10000, 45000, 180000, 750000, 3500000, 18000000],
+          getProgress: () => GymState.trainers.reduce((s, t) => s + t.count, 0)
+        },
+        {
+          id: 'facility_tier',
+          title: '센터 확장 도약',
+          desc: (target) => `${GymState.tiers[target]?.name || '최고 랜드마크'}으로 확장`,
+          icon: '🏢',
+          stage: 0,
+          targets: [1, 2, 3, 4, 5, 6, 7],
+          rewards: [1000, 6000, 35000, 180000, 950000, 4800000, 28000000],
+          getProgress: () => GymState.currentTierIndex
+        },
+        {
+          id: 'gold_magnate',
+          title: '누적 매출 신화',
+          desc: (target) => `누적 골드 ${formatNumber(target)}G 달성`,
+          icon: '🪙',
+          stage: 0,
+          targets: [500, 3000, 20000, 100000, 600000, 3500000, 20000000, 120000000, 800000000],
+          rewards: [200, 1000, 7000, 35000, 220000, 1200000, 7500000, 40000000, 250000000],
+          getProgress: () => GymState.totalEarned
+        },
+        {
+          id: 'marketing_mogul',
+          title: '바이럴 홍보왕',
+          desc: (target) => `마케팅 총 레벨 ${target} 달성`,
+          icon: '📢',
+          stage: 0,
+          targets: [3, 8, 20, 50, 100, 200, 400, 800],
+          rewards: [250, 1200, 5000, 24000, 95000, 420000, 2000000, 10000000],
+          getProgress: () => GymState.marketing.reduce((s, m) => s + m.level, 0)
+        },
+        {
+          id: 'vip_welcomer',
+          title: 'VIP 고객 감동',
+          desc: (target) => `VIP 회원 누적 ${target}명 퇴장 결제 달성`,
+          icon: '👑',
+          stage: 0,
+          targets: [3, 10, 30, 80, 200, 500, 1200, 3000],
+          rewards: [400, 1800, 8000, 38000, 160000, 750000, 3200000, 15000000],
+          getProgress: () => GymState.vipServedCount
+        }
+      ]
+    };
+
+    function getFlyerClickPower() {
+      const item = GymState.marketing.find(m => m.id === 'flyer_quality');
+      const lv1 = item ? item.level : 0;
+      const base = 1 + lv1; // 난이도 상향: 클릭당 1G씩만 증가
+      return GymState.feverActive ? Math.round(base * 1.7) : base;
+    }
+
+    function getMemberSpawnInterval() {
+      const item = GymState.marketing.find(m => m.id === 'sns_ad');
+      const lv = item ? item.level : 0;
+      const rate = Math.max(0.60, 5.0 * Math.pow(0.93, lv)); // 기본 5초
+      return GymState.feverActive ? rate * 0.6 : rate;
+    }
+
+    function getVipChance() {
+      const item = GymState.marketing.find(m => m.id === 'vip_pass');
+      const lv = item ? item.level : 0;
+      return Math.min(0.60, 0.05 + (lv * 0.04));
+    }
+
+    function getCheckoutTipMultiplier() {
+      const item = GymState.marketing.find(m => m.id === 'body_profile');
+      const lv = item ? item.level : 0;
+      return 1 + (lv * 0.10); // 10%씩만 증가
+    }
+
+    // 방재 및 보험 감면 배율
+    function getDisasterLossMultiplier() {
+      const ins = GymState.marketing.find(m => m.id === 'insurance');
+      const lv = ins ? ins.level : 0;
+      return Math.max(0.40, 1.0 - (lv * 0.12)); // 최대 60% 경감
+    }
+
+    function getDisasterChanceMultiplier() {
+      const sys = GymState.marketing.find(m => m.id === 'disaster_system');
+      const lv = sys ? sys.level : 0;
+      return Math.max(0.50, 1.0 - (lv * 0.10)); // 최대 50% 억제
+    }
+
+    function getMarketingCost(item) {
+      return Math.round(item.baseCost * Math.pow(item.costMult, item.level));
+    }
+
+    function getTrainerCost(t) {
+      return Math.round(t.baseCost * Math.pow(t.costMult, t.count));
+    }
+
+    function getMachineCost(m) {
+      if (!m.unlocked) return m.baseCost;
+      return Math.round(m.baseCost * Math.pow(1.22, m.level)); // 비용 지수 1.17 -> 1.22 가속
+    }
+
+    function getMachineCurrentGps(m) {
+      if (!m.unlocked || m.level <= 0) return 0;
+      let gps = m.baseGps * m.level * Math.pow(1.045, m.level - 1);
+      
+      GymState.trainers.forEach(t => {
+        if (t.count > 0 && (t.boostType === 'all' || t.boostType === m.type)) {
+          gps *= Math.pow(1 + t.multPerHire, t.count);
+        }
+      });
+
+      const inf = GymState.marketing.find(item => item.id === 'influencer');
+      if (inf && inf.level > 0) {
+        gps *= Math.pow(1.07, inf.level);
+      }
+
+      if (GymState.feverActive) {
+        gps *= 1.7; // 2.0 -> 1.7
+      }
+
+      return gps;
+    }
+
+    function calculateTotalGps() {
+      return GymState.machines.reduce((sum, m) => sum + getMachineCurrentGps(m), 0);
+    }
+
+    function checkClaimableMissionsCount() {
+      return GymState.missions.filter(m => {
+        if (m.stage >= m.targets.length) return false;
+        const target = m.targets[m.stage];
+        const progress = m.getProgress();
+        return progress >= target;
+      }).length;
+    }
+
+    function triggerDisaster() {
+      if (GymState.gold <= 50) return; // 가진 돈이 너무 적으면 패스
+
+      const disasters = GymState.disasterTypes;
+      const disaster = disasters[Math.floor(Math.random() * disasters.length)];
+
+      const lossMult = getDisasterLossMultiplier();
+      let rawLoss = Math.max(disaster.minLoss, Math.round(GymState.gold * disaster.lossPct));
+      let actualLoss = Math.min(GymState.gold, Math.round(rawLoss * lossMult));
+
+      GymState.gold = Math.max(0, GymState.gold - actualLoss);
+
+      // 회원 일부 도망 연출
+      if (disaster.scareMembers && activeMembers.length > 2) {
+        const fleeingCount = Math.floor(activeMembers.length * 0.6);
+        for (let i = 0; i < fleeingCount; i++) {
+          if (activeMembers[i]) {
+            activeMembers[i].state = 'leaving';
+          }
+        }
+      }
+
+      // 시각 및 청각 연출
+      playSfx('siren');
+
+      const banner = document.getElementById('disasterBanner');
+      const bannerText = document.getElementById('disasterBannerText');
+      const flash = document.getElementById('disasterFlash');
+
+      if (banner && bannerText) {
+        bannerText.innerHTML = `<span class="text-amber-300 font-bold">${disaster.name}</span> <span class="text-rose-300">(-${formatNumber(actualLoss)}G 손실)</span>`;
+        banner.classList.remove('hidden');
+      }
+      if (flash) {
+        flash.classList.remove('hidden');
+      }
+
+      GymState.activeDisasterTimer = 3.8;
+
+      // 플로팅 텍스트
+      addFloatingText(canvasW * 0.5, canvasH * 0.45, `💥 -${formatNumber(actualLoss)}G 피해!`, '#ef4444');
+      showToast(`⚠️ [재난] ${disaster.name} ${formatNumber(actualLoss)}G 손실 발생!`);
+
+      updateHUDLive();
+      saveGame();
+    }
+
+    function saveGame() {
+      try {
+        const payload = {
+          gold: GymState.gold,
+          totalEarned: GymState.totalEarned,
+          flyerClicks: GymState.flyerClicks,
+          vipServedCount: GymState.vipServedCount,
+          currentTierIndex: GymState.currentTierIndex,
+          maxMembers: GymState.maxMembers,
+          machines: GymState.machines.map(m => ({ id: m.id, level: m.level, unlocked: m.unlocked })),
+          marketing: GymState.marketing.map(m => ({ id: m.id, level: m.level })),
+          trainers: GymState.trainers.map(t => ({ id: t.id, count: t.count })),
+          missions: GymState.missions.map(m => ({ id: m.id, stage: m.stage }))
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+      } catch (e) {}
+    }
+
+    function loadGame() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const data = JSON.parse(raw);
+
+        if (typeof data.gold === 'number') GymState.gold = data.gold;
+        if (typeof data.totalEarned === 'number') GymState.totalEarned = data.totalEarned;
+        if (typeof data.flyerClicks === 'number') GymState.flyerClicks = data.flyerClicks;
+        if (typeof data.vipServedCount === 'number') GymState.vipServedCount = data.vipServedCount;
+        if (typeof data.currentTierIndex === 'number') {
+          GymState.currentTierIndex = Math.min(data.currentTierIndex, GymState.tiers.length - 1);
+          GymState.maxMembers = GymState.tiers[GymState.currentTierIndex].maxMembers;
+        }
+
+        if (Array.isArray(data.machines)) {
+          data.machines.forEach(saved => {
+            const m = GymState.machines.find(item => item.id === saved.id);
+            if (m) {
+              m.level = saved.level;
+              m.unlocked = saved.unlocked;
+            }
+          });
+        }
+
+        if (Array.isArray(data.marketing)) {
+          data.marketing.forEach(saved => {
+            const m = GymState.marketing.find(item => item.id === saved.id);
+            if (m) m.level = saved.level;
+          });
+        }
+
+        if (Array.isArray(data.trainers)) {
+          data.trainers.forEach(saved => {
+            const t = GymState.trainers.find(item => item.id === saved.id);
+            if (t) t.count = saved.count;
+          });
+        }
+
+        if (Array.isArray(data.missions)) {
+          data.missions.forEach(saved => {
+            const ms = GymState.missions.find(item => item.id === saved.id);
+            if (ms) ms.stage = saved.stage;
+          });
+        }
+      } catch (e) {}
+    }
+
+    const canvas = document.getElementById('gymCanvas');
+    const ctx = canvas.getContext('2d');
+    let canvasW = 800;
+    let canvasH = 460;
+
+    function resizeCanvas() {
+      const wrapper = document.getElementById('canvasWrapper');
+      if (!wrapper) return;
+      const rect = wrapper.getBoundingClientRect();
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+      const availableW = Math.floor(rect.width || wrapper.clientWidth || 800);
+      const availableH = Math.floor(rect.height || wrapper.clientHeight || 460);
+      // Keep the internal canvas coordinate system aligned with the actual CSS size on small phones.
+      canvasW = Math.max(280, availableW);
+      canvasH = Math.max(240, availableH);
+
+      canvas.width = canvasW * dpr;
+      canvas.height = canvasH * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.imageSmoothingEnabled = false;
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    const resizeObserver = new ResizeObserver(() => resizeCanvas());
+    const wrapperEl = document.getElementById('canvasWrapper');
+    if (wrapperEl) resizeObserver.observe(wrapperEl);
+
+    const floatingTexts = [];
+    function addFloatingText(x, y, text, color = '#facc15') {
+      floatingTexts.push({ x, y, text, color, life: 1.0, vy: -1.2 });
+    }
+
+    const activeMembers = [];
+
+    const MEMBER_PALETTES = [
+      {
+        id: 'chick',
+        name: '병아리 헬린이',
+        hair: '#facc15',
+        hairHighlight: '#fef08a',
+        shirt: '#fef08a',
+        pants: '#334155',
+        skin: '#fed7aa',
+        blush: '#fb7185',
+        headband: '#ef4444',
+        sprout: '#22c55e',
+        type: 'cute'
+      },
+      {
+        id: 'pilates',
+        name: '요가 요정',
+        hair: '#7e22ce',
+        hairHighlight: '#c084fc',
+        shirt: '#f472b6',
+        pants: '#fbcfe8',
+        skin: '#ffedd5',
+        blush: '#f43f5e',
+        rabbitEars: '#f472b6',
+        bottle: '#38bdf8',
+        type: 'pilates'
+      },
+      {
+        id: 'hulk',
+        name: '우람한 득근몬',
+        hair: '#1e293b',
+        hairHighlight: '#475569',
+        shirt: '#22c55e',
+        pants: '#0f172a',
+        skin: '#fed7aa',
+        blush: '#f87171',
+        shaker: '#38bdf8',
+        isBulky: true,
+        type: 'hulk'
+      },
+      {
+        id: 'salaryman',
+        name: '퇴근길 직장인',
+        hair: '#475569',
+        hairHighlight: '#94a3b8',
+        shirt: '#f8fafc',
+        tie: '#3b82f6',
+        pants: '#1e293b',
+        skin: '#fed7aa',
+        blush: '#fca5a5',
+        glasses: '#0f172a',
+        type: 'office'
+      },
+      {
+        id: 'vip_gold',
+        name: '골드 만수르 VIP',
+        hair: '#f59e0b',
+        hairHighlight: '#fde68a',
+        shirt: '#fbbf24',
+        pants: '#78350f',
+        skin: '#ffedd5',
+        blush: '#fb923c',
+        isVip: true,
+        crown: '#fbbf24',
+        sunglasses: '#0f172a',
+        type: 'vip'
+      }
+    ];
+
+    const activeCoaches = [];
+    const COACH_SPEECHES = {
+      trainer_kim: ['하나 더! 🔥', '자세 집중!', '네거티브!', '마지막 1회!'],
+      trainer_lee: ['호흡 들이쉬고~ 💨', '자세 굿! 👍', '리듬 유지해요!', '수분 보충! 💧'],
+      trainer_choi: ['자극 느끼세요!', '무게 컨트롤!', '머신 풀가동! ⚙️', '궤적 완벽!'],
+      trainer_sarah: ['코어 조여주세요~ 🧘‍♀️', '골반 정렬!', '척추 길게!', '호흡 깊게~'],
+      trainer_park: ['무게 올려! 💪', '득근필승!', '근손실 금지!', '이게 쇠질이지! 🔥']
+    };
+
+    function syncCoaches() {
+      GymState.trainers.forEach(t => {
+        const currentInGym = activeCoaches.filter(c => c.typeId === t.id).length;
+        const needed = t.count - currentInGym;
+
+        for (let i = 0; i < needed; i++) {
+          const initX = canvasW * (0.15 + Math.random() * 0.7);
+          const initY = canvasH * (0.45 + Math.random() * 0.4);
+
+          activeCoaches.push({
+            id: `${t.id}_${Date.now()}_${Math.random()}`,
+            typeId: t.id,
+            name: t.name,
+            x: initX,
+            y: initY,
+            targetX: initX,
+            targetY: initY,
+            state: 'patrolling',
+            timer: 1.5 + Math.random() * 2.0,
+            animFrame: Math.random() * 5,
+            bubble: '',
+            bubbleTimer: 0
+          });
+        }
+      });
+    }
+
+    function updateCoaches(dt) {
+      const machList = Object.values(getMachineCoordinates());
+      if (machList.length === 0) return;
+
+      activeCoaches.forEach(c => {
+        c.animFrame += dt * 4;
+        c.timer -= dt;
+
+        if (c.bubbleTimer > 0) {
+          c.bubbleTimer -= dt;
+          if (c.bubbleTimer <= 0) c.bubble = '';
+        }
+
+        if (c.state === 'patrolling') {
+          const dx = c.targetX - c.x;
+          const dy = c.targetY - c.y;
+          const dist = Math.hypot(dx, dy);
+
+          if (dist < 8) {
+            c.state = 'coaching';
+            c.timer = 2.0 + Math.random() * 2.5;
+            const speeches = COACH_SPEECHES[c.typeId] || ['파이팅!'];
+            c.bubble = speeches[Math.floor(Math.random() * speeches.length)];
+            c.bubbleTimer = 2.0;
+          } else {
+            const speed = 52 * dt;
+            c.x += (dx / dist) * speed;
+            c.y += (dy / dist) * speed;
+          }
+        } else if (c.state === 'coaching') {
+          if (c.timer <= 0) {
+            c.state = 'patrolling';
+            const randomMach = machList[Math.floor(Math.random() * machList.length)];
+            c.targetX = randomMach.x + (Math.random() * 32 - 16);
+            c.targetY = randomMach.y + (Math.random() * 16 - 8);
+          }
+        }
+      });
+    }
+
+    function spawnMember(isImmediate = false) {
+      if (activeMembers.length >= GymState.maxMembers) return;
+      const unlockedMachines = GymState.machines.filter(m => m.unlocked);
+      if (unlockedMachines.length === 0) return;
+
+      const isVip = Math.random() < getVipChance();
+      const palette = isVip ? MEMBER_PALETTES[4] : MEMBER_PALETTES[Math.floor(Math.random() * 4)];
+      const targetMachine = unlockedMachines[Math.floor(Math.random() * unlockedMachines.length)];
+
+      const doorX = 40;
+      const doorY = canvasH - 50;
+
+      activeMembers.push({
+        x: doorX,
+        y: doorY,
+        targetMachineId: targetMachine.id,
+        state: 'walking_to_machine',
+        workoutTimer: 0,
+        workoutDuration: isVip ? 5.5 : 3.8,
+        palette: palette,
+        isVip: isVip,
+        animFrame: Math.random() * 10,
+        sweatTimer: 0,
+        heartTimer: 0,
+        facing: 1 // 1: right, -1: left
+      });
+    }
+
+    function getMachineCoordinates() {
+      const floorY = canvasH * 0.35;
+      const playableH = Math.max(130, canvasH - floorY - 50);
+
+      const row1Y = floorY + playableH * 0.25;
+      const row2Y = floorY + playableH * 0.58;
+      const row3Y = floorY + playableH * 0.88;
+
+      return {
+        dumbbell:    { x: canvasW * 0.15, y: row1Y, w: 42, h: 32 },
+        treadmill:   { x: canvasW * 0.35, y: row1Y, w: 42, h: 32 },
+        bench:       { x: canvasW * 0.55, y: row1Y, w: 44, h: 32 },
+        lat_pulldown:{ x: canvasW * 0.74, y: row1Y, w: 42, h: 34 },
+        squat:       { x: canvasW * 0.90, y: row1Y, w: 44, h: 36 },
+
+        leg_press:   { x: canvasW * 0.15, y: row2Y, w: 46, h: 34 },
+        cable:       { x: canvasW * 0.35, y: row2Y, w: 44, h: 36 },
+        stair:       { x: canvasW * 0.55, y: row2Y, w: 42, h: 36 },
+        rowing:      { x: canvasW * 0.74, y: row2Y, w: 46, h: 30 },
+        boxing:      { x: canvasW * 0.90, y: row2Y, w: 38, h: 38 },
+
+        pilates:     { x: canvasW * 0.22, y: row3Y, w: 46, h: 32 },
+        protein_bar: { x: canvasW * 0.46, y: row3Y, w: 48, h: 34 },
+        cryo:        { x: canvasW * 0.70, y: row3Y, w: 44, h: 36 },
+        sauna:       { x: canvasW * 0.90, y: row3Y, w: 46, h: 36 }
+      };
+    }
+
+    function updateMembers(dt) {
+      const machineCoords = getMachineCoordinates();
+      const doorX = 35;
+      const doorY = canvasH - 45;
+
+      const speedMultiplier = GymState.feverActive ? 1.6 : 1.0;
+
+      for (let i = activeMembers.length - 1; i >= 0; i--) {
+        const mem = activeMembers[i];
+        mem.animFrame += dt * 6 * speedMultiplier;
+
+        if (mem.state === 'walking_to_machine') {
+          const target = machineCoords[mem.targetMachineId] || { x: canvasW * 0.5, y: canvasH * 0.6 };
+          const destX = target.x;
+          const destY = target.y + 10;
+
+          const dx = destX - mem.x;
+          const dy = destY - mem.y;
+          const dist = Math.hypot(dx, dy);
+
+          if (dist < 6) {
+            mem.x = destX;
+            mem.y = destY;
+            mem.state = 'working_out';
+            mem.workoutTimer = 0;
+            playSfx('clank');
+          } else {
+            const speed = 85 * dt * speedMultiplier;
+            mem.x += (dx / dist) * speed;
+            mem.y += (dy / dist) * speed;
+            mem.facing = dx >= 0 ? 1 : -1;
+          }
+        } else if (mem.state === 'working_out') {
+          mem.workoutTimer += dt * speedMultiplier;
+          mem.sweatTimer += dt;
+
+          if (mem.workoutTimer >= mem.workoutDuration) {
+            const m = GymState.machines.find(mach => mach.id === mem.targetMachineId);
+            // 난이도 상향: 퇴장 결제 팁 배율 3.0 -> 1.5 배율로 현실화
+            const basePayout = m ? Math.max(1, Math.round(getMachineCurrentGps(m) * 1.5)) : 2;
+            const tipMult = getCheckoutTipMultiplier();
+            const vipMult = mem.isVip ? 1.8 : 1.0;
+            const payout = Math.round(basePayout * tipMult * vipMult);
+
+            GymState.gold += payout;
+            GymState.totalEarned += payout;
+            if (mem.isVip) GymState.vipServedCount += 1;
+
+            mem.heartTimer = 1.8; // 기분 좋게 퇴장하며 하트 뿅뿅 연출
+            addFloatingText(mem.x, mem.y - 28, `+${formatNumber(payout)}G`, mem.isVip ? '#fde047' : '#4ade80');
+            playSfx('coin');
+            mem.state = 'leaving';
+          }
+        } else if (mem.state === 'leaving') {
+          if (mem.heartTimer > 0) mem.heartTimer -= dt;
+          const dx = doorX - mem.x;
+          const dy = doorY - mem.y;
+          const dist = Math.hypot(dx, dy);
+
+          if (dist < 6) {
+            activeMembers.splice(i, 1);
+          } else {
+            const speed = 95 * dt * speedMultiplier;
+            mem.x += (dx / dist) * speed;
+            mem.y += (dy / dist) * speed;
+            mem.facing = dx >= 0 ? 1 : -1;
+          }
+        }
+      }
+    }
+
+    function drawGymScene() {
+      ctx.clearRect(0, 0, canvasW, canvasH);
+      const timeMs = performance.now();
+
+      const tier = GymState.currentTierIndex;
+      const wallH = Math.max(75, canvasH * 0.35);
+      const floorH = canvasH - wallH;
+
+      // Draw Wall Theme Backgrounds
+      if (tier === 0) {
+        ctx.fillStyle = '#141b2d';
+        ctx.fillRect(0, 0, canvasW, wallH);
+        ctx.strokeStyle = '#0a101f';
+        ctx.lineWidth = 1;
+        const brickH = 14;
+        const brickW = 28;
+        for (let y = 0; y < wallH; y += brickH) {
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(canvasW, y);
+          ctx.stroke();
+          const offset = (Math.floor(y / brickH) % 2) * (brickW / 2);
+          for (let x = offset; x < canvasW; x += brickW) {
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x, y + brickH);
+            ctx.stroke();
+          }
+        }
+      } else if (tier === 1) {
+        ctx.fillStyle = '#e2e8f0';
+        ctx.fillRect(0, 0, canvasW, wallH);
+
+        const winW = canvasW * 0.22;
+        const winH = wallH * 0.68;
+        const winY = 14;
+        [canvasW * 0.08, canvasW * 0.39, canvasW * 0.70].forEach(wx => {
+          ctx.fillStyle = '#475569';
+          ctx.fillRect(wx - 3, winY - 3, winW + 6, winH + 6);
+          const skyGrad = ctx.createLinearGradient(wx, winY, wx, winY + winH);
+          skyGrad.addColorStop(0, '#38bdf8');
+          skyGrad.addColorStop(1, '#bae6fd');
+          ctx.fillStyle = skyGrad;
+          ctx.fillRect(wx, winY, winW, winH);
+
+          ctx.fillStyle = 'rgba(255,255,255,0.85)';
+          ctx.fillRect(wx + 8, winY + 6, 24, 6);
+          ctx.fillRect(wx + 16, winY + 2, 14, 5);
+          ctx.fillStyle = '#94a3b8';
+          ctx.fillRect(wx + 4, winY + winH - 18, 14, 18);
+          ctx.fillRect(wx + 22, winY + winH - 26, 18, 26);
+          ctx.fillRect(wx + 44, winY + winH - 15, 12, 15);
+
+          ctx.fillStyle = '#334155';
+          ctx.fillRect(wx + winW * 0.5 - 1, winY, 2, winH);
+          ctx.fillRect(wx, winY + winH * 0.5 - 1, winW, 2);
+        });
+      } else if (tier === 2) {
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(0, 0, canvasW, wallH);
+        ctx.fillStyle = '#d97706';
+        ctx.fillRect(0, 0, canvasW, 6);
+        ctx.fillRect(0, wallH - 6, canvasW, 6);
+        ctx.fillStyle = '#fde68a';
+        ctx.fillRect(0, 2, canvasW, 2);
+        for (let gx = 20; gx < canvasW; gx += 50) {
+          ctx.strokeStyle = 'rgba(245, 158, 11, 0.3)';
+          ctx.strokeRect(gx, 14, 30, wallH - 26);
+        }
+      } else if (tier === 3) {
+        ctx.fillStyle = '#050814';
+        ctx.fillRect(0, 0, canvasW, wallH);
+        const winGrad = ctx.createLinearGradient(0, 0, 0, wallH);
+        winGrad.addColorStop(0, '#0c1026');
+        winGrad.addColorStop(1, '#1e1b4b');
+        ctx.fillStyle = winGrad;
+        ctx.fillRect(10, 8, canvasW - 20, wallH - 12);
+        for (let bx = 16; bx < canvasW - 20; bx += 30) {
+          const bH = 20 + ((bx * 7) % 36);
+          ctx.fillStyle = '#090d1f';
+          ctx.fillRect(bx, wallH - 6 - bH, 24, bH);
+          ctx.fillStyle = '#fef08a';
+          for (let wy = wallH - 4 - bH; wy < wallH - 10; wy += 6) {
+            ctx.fillRect(bx + 4, wy, 3, 3);
+            ctx.fillRect(bx + 11, wy, 3, 3);
+            ctx.fillRect(bx + 18, wy, 3, 3);
+          }
+        }
+        ctx.fillStyle = '#06b6d4';
+        ctx.fillRect(0, wallH - 3, canvasW, 3);
+      } else if (tier === 4) {
+        ctx.fillStyle = '#26150b';
+        ctx.fillRect(0, 0, canvasW, wallH);
+        [20, canvasW * 0.28, canvasW * 0.72, canvasW - 36].forEach(px => {
+          ctx.fillStyle = '#fde68a';
+          ctx.fillRect(px, 0, 16, wallH);
+          ctx.fillStyle = '#d97706';
+          ctx.fillRect(px + 3, 4, 3, wallH - 8);
+          ctx.fillRect(px + 10, 4, 3, wallH - 8);
+        });
+        ctx.fillStyle = '#b45309';
+        ctx.fillRect(canvasW * 0.30, 6, canvasW * 0.40, 18);
+        ctx.fillStyle = '#fef08a';
+        ctx.font = 'bold 10px DungGeunMo, monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('🏆 MR. OLYMPIA MECCA ARENA 🏆', canvasW * 0.5, 19);
+      } else if (tier === 5) {
+        ctx.fillStyle = '#064e3b';
+        ctx.fillRect(0, 0, canvasW, wallH);
+        ctx.fillStyle = '#10b981';
+        ctx.fillRect(0, wallH - 4, canvasW, 4);
+        ctx.fillStyle = '#6ee7b7';
+        ctx.font = 'bold 11px DungGeunMo, monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('🌿 EMERALD SKY BOTANICAL PENTHOUSE 🌿', canvasW * 0.5, 20);
+      } else if (tier === 6) {
+        ctx.fillStyle = '#3b0764';
+        ctx.fillRect(0, 0, canvasW, wallH);
+        ctx.fillStyle = '#f59e0b';
+        ctx.fillRect(0, wallH - 4, canvasW, 4);
+        ctx.font = 'bold 11px DungGeunMo, monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('🌍 GLOBAL PRESTIGE GYM HEADQUARTERS 🌍', canvasW * 0.5, 20);
+      } else {
+        ctx.fillStyle = '#020617';
+        ctx.fillRect(0, 0, canvasW, wallH);
+        for (let s = 10; s < canvasW; s += 24) {
+          ctx.fillStyle = s % 2 === 0 ? '#38bdf8' : '#f472b6';
+          ctx.fillRect(s, 6 + ((s * 3) % (wallH - 14)), 2, 2);
+        }
+        ctx.fillStyle = '#0284c7';
+        ctx.beginPath();
+        ctx.arc(canvasW * 0.85, wallH * 0.5, 24, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#22c55e';
+        ctx.fillRect(canvasW * 0.83, wallH * 0.45, 8, 10);
+        ctx.fillRect(canvasW * 0.86, wallH * 0.52, 6, 8);
+        ctx.fillStyle = '#ec4899';
+        ctx.fillRect(0, wallH - 3, canvasW, 3);
+        ctx.font = 'bold 11px DungGeunMo, monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('🚀 ZERO-G EXTREME SPACE ARENA 🚀', canvasW * 0.5, 20);
+      }
+
+      ctx.fillStyle = '#1e293b';
+      ctx.fillRect(0, 2, canvasW, 6);
+      [canvasW * 0.25, canvasW * 0.5, canvasW * 0.75].forEach(sx => {
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(sx - 6, 6, 12, 5);
+        ctx.fillStyle = GymState.feverActive ? '#ef4444' : (tier === 2 || tier === 4 ? '#fde047' : '#fef08a');
+        ctx.fillRect(sx - 3, 11, 6, 2);
+
+        const lightGrad = ctx.createRadialGradient(sx, 12, 4, sx, canvasH * 0.75, canvasW * 0.22);
+        lightGrad.addColorStop(0, GymState.feverActive ? 'rgba(239, 68, 68, 0.25)' : (tier === 2 || tier === 4 ? 'rgba(253, 224, 71, 0.16)' : 'rgba(254, 240, 138, 0.12)'));
+        lightGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = lightGrad;
+        ctx.beginPath();
+        ctx.moveTo(sx - 4, 12);
+        ctx.lineTo(sx + canvasW * 0.16, canvasH);
+        ctx.lineTo(sx - canvasW * 0.16, canvasH);
+        ctx.closePath();
+        ctx.fill();
+      });
+
+      // Mirror with Dynamic Reflections
+      const mirrorX = canvasW * 0.20;
+      const mirrorY = 22;
+      const mirrorW = canvasW * 0.60;
+      const mirrorH = Math.max(30, wallH - 26);
+
+      ctx.fillStyle = tier === 2 || tier === 4 ? '#fbbf24' : '#94a3b8';
+      ctx.fillRect(mirrorX - 4, mirrorY - 4, mirrorW + 8, mirrorH + 8);
+      ctx.fillStyle = tier === 2 || tier === 4 ? '#92400e' : '#475569';
+      ctx.fillRect(mirrorX - 2, mirrorY - 2, mirrorW + 4, mirrorH + 4);
+
+      const mirrorGrad = ctx.createLinearGradient(mirrorX, mirrorY, mirrorX, mirrorY + mirrorH);
+      mirrorGrad.addColorStop(0, tier === 1 ? '#0369a1' : '#0e2a3b');
+      mirrorGrad.addColorStop(1, '#071520');
+      ctx.fillStyle = mirrorGrad;
+      ctx.fillRect(mirrorX, mirrorY, mirrorW, mirrorH);
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(mirrorX, mirrorY, mirrorW, mirrorH);
+      ctx.clip();
+
+      activeMembers.forEach(mem => {
+        const refX = mem.x;
+        const refY = mirrorY + mirrorH - ((canvasH - mem.y) * 0.30);
+        ctx.fillStyle = mem.isVip ? 'rgba(253, 224, 71, 0.45)' : 'rgba(148, 163, 184, 0.35)';
+        ctx.fillRect(refX - 5, refY - 14, 10, 14);
+        ctx.fillStyle = 'rgba(254, 215, 170, 0.35)';
+        ctx.fillRect(refX - 4, refY - 22, 8, 8);
+      });
+
+      activeCoaches.forEach(coach => {
+        const refX = coach.x;
+        const refY = mirrorY + mirrorH - ((canvasH - coach.y) * 0.30);
+        ctx.fillStyle = coach.typeId === 'trainer_kim' ? 'rgba(239, 68, 68, 0.5)' : coach.typeId === 'trainer_lee' ? 'rgba(45, 212, 191, 0.5)' : coach.typeId === 'trainer_choi' ? 'rgba(59, 130, 246, 0.5)' : 'rgba(245, 158, 11, 0.5)';
+        ctx.fillRect(refX - 6, refY - 16, 12, 16);
+      });
+
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+      ctx.beginPath();
+      ctx.moveTo(mirrorX + 20, mirrorY);
+      ctx.lineTo(mirrorX + 60, mirrorY);
+      ctx.lineTo(mirrorX + 10, mirrorY + mirrorH);
+      ctx.lineTo(mirrorX - 30, mirrorY + mirrorH);
+      ctx.fill();
+      ctx.restore();
+
+      // Neon Motivational Sign
+      ctx.fillStyle = GymState.feverActive ? '#ef4444' : (tier === 2 || tier === 4 ? '#f59e0b' : '#ef4444');
+      ctx.shadowColor = GymState.feverActive ? '#f87171' : (tier === 2 || tier === 4 ? '#fde047' : '#f87171');
+      ctx.shadowBlur = 8;
+      ctx.font = 'bold 11px DungGeunMo, monospace';
+      ctx.textAlign = 'center';
+      const signText = GymState.feverActive ? '🔥 FEVER BOOSTER MODE ACTIVE! 🔥' : (tier === 0 ? '⚡ NO PAIN NO GAIN ⚡' : tier === 1 ? '☀️ FRESH & HEALTHY ☀️' : tier === 2 ? '👑 GOLD STRENGTH CLUB 👑' : tier === 3 ? '🌐 WORLD CYBER FITNESS 🌐' : tier === 4 ? '🏆 OLYMPIA HALL OF FAME 🏆' : tier === 5 ? '🌿 BOTANICAL SKY FITNESS 🌿' : tier === 6 ? '🌍 GLOBAL CHAMPION GYM 🌍' : '🚀 ZERO-G EXTREME GYM 🚀');
+      ctx.fillText(signText, canvasW * 0.5, mirrorY + 16);
+      ctx.shadowBlur = 0;
+
+      // Ambient Wall Clock & Ventilation Prop
+      const clockX = canvasW * 0.08;
+      const clockY = 16;
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(clockX - 16, clockY - 8, 32, 16);
+      ctx.strokeStyle = '#334155';
+      ctx.strokeRect(clockX - 16, clockY - 8, 32, 16);
+      ctx.fillStyle = (Math.floor(timeMs / 500) % 2 === 0) ? '#38bdf8' : '#0284c7';
+      ctx.font = 'bold 9px monospace';
+      ctx.textAlign = 'center';
+      const nowD = new Date();
+      const timeStr = `${String(nowD.getHours()).padStart(2, '0')}:${String(nowD.getMinutes()).padStart(2, '0')}`;
+      ctx.fillText(timeStr, clockX, clockY + 4);
+
+      // Rotating Ventilation Fan Prop on Wall
+      const fanX = canvasW * 0.92;
+      const fanY = 16;
+      ctx.fillStyle = '#1e293b';
+      ctx.beginPath();
+      ctx.arc(fanX, fanY, 11, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#475569';
+      ctx.stroke();
+      ctx.save();
+      ctx.translate(fanX, fanY);
+      ctx.rotate((timeMs * 0.008) % (Math.PI * 2));
+      ctx.fillStyle = '#94a3b8';
+      for (let b = 0; b < 4; b++) {
+        ctx.rotate(Math.PI / 2);
+        ctx.fillRect(-2, -9, 4, 8);
+      }
+      ctx.restore();
+
+      // Architectural Skirting Baseboard (벽과 바닥 경계 몰딩)
+      ctx.fillStyle = tier === 2 || tier === 4 ? '#78350f' : '#1e293b';
+      ctx.fillRect(0, wallH - 4, canvasW, 5);
+      ctx.fillStyle = tier === 2 || tier === 4 ? '#b45309' : '#0f172a';
+      ctx.fillRect(0, wallH + 1, canvasW, 2);
+
+      // Unified, High-Quality Themed Floor (어색한 반반 분할 제거 및 일체형 헬스장 바닥)
+      if (tier === 0) {
+        // Tier 0 (지하 쇠맛터): 일체형 고밀도 블랙 에버롤 고무 블록 바닥 + 노란색 안전 구획 라인
+        ctx.fillStyle = '#171923';
+        ctx.fillRect(0, wallH + 3, canvasW, floorH - 3);
+
+        const tileSize = 36;
+        ctx.strokeStyle = '#0e1017';
+        ctx.lineWidth = 1;
+        for (let tx = 0; tx < canvasW; tx += tileSize) {
+          for (let ty = wallH + 3; ty < canvasH; ty += tileSize) {
+            ctx.strokeRect(tx, ty, tileSize, tileSize);
+            // 은은한 고무 질감 미세 도트
+            ctx.fillStyle = '#232738';
+            ctx.fillRect(tx + 4, ty + 5, 2, 2);
+            ctx.fillRect(tx + 18, ty + 22, 2, 2);
+            ctx.fillRect(tx + 28, ty + 10, 2, 2);
+          }
+        }
+        // 프리웨이트 존 안전 옐로우 해저드 스트라이프 라인 (바닥 하단)
+        ctx.fillStyle = '#eab308';
+        ctx.fillRect(canvasW * 0.08, wallH + 12, canvasW * 0.84, 2);
+        ctx.fillStyle = '#ca8a04';
+        for (let sx = canvasW * 0.08; sx < canvasW * 0.92; sx += 18) {
+          ctx.fillRect(sx, wallH + 12, 8, 2);
+        }
+      } else if (tier === 1) {
+        // Tier 1 (쾌적 채광 피트니스): 통일감 있는 프리미엄 원목 마루 플랭크
+        ctx.fillStyle = '#b45309';
+        ctx.fillRect(0, wallH + 3, canvasW, floorH - 3);
+
+        const plankH = 14;
+        const plankW = 56;
+        for (let py = wallH + 3; py < canvasH; py += plankH) {
+          ctx.strokeStyle = '#92400e';
+          ctx.beginPath();
+          ctx.moveTo(0, py);
+          ctx.lineTo(canvasW, py);
+          ctx.stroke();
+
+          const offset = (Math.floor((py - wallH) / plankH) % 3) * (plankW / 3);
+          for (let px = offset; px < canvasW; px += plankW) {
+            ctx.beginPath();
+            ctx.moveTo(px, py);
+            ctx.lineTo(px, py + plankH);
+            ctx.stroke();
+
+            // 부드러운 우드결 음영
+            ctx.fillStyle = 'rgba(254, 215, 170, 0.12)';
+            ctx.fillRect(px + 4, py + 2, plankW - 8, 2);
+          }
+        }
+        // 창가 햇살 바닥 드리움 연출
+        const sunGrad = ctx.createLinearGradient(0, wallH, 0, canvasH);
+        sunGrad.addColorStop(0, 'rgba(254, 240, 138, 0.18)');
+        sunGrad.addColorStop(1, 'rgba(254, 240, 138, 0)');
+        ctx.fillStyle = sunGrad;
+        ctx.fillRect(0, wallH + 3, canvasW, floorH - 3);
+      } else if (tier === 2) {
+        // Tier 2 (골드 스트렝스 클럽): 럭셔리 다크 마블 타일 + 골드 몰딩 테두리
+        ctx.fillStyle = '#090d16';
+        ctx.fillRect(0, wallH + 3, canvasW, floorH - 3);
+
+        const mSize = 40;
+        for (let tx = 0; tx < canvasW; tx += mSize) {
+          for (let ty = wallH + 3; ty < canvasH; ty += mSize) {
+            const isAlt = (Math.floor(tx / mSize) + Math.floor(ty / mSize)) % 2 === 0;
+            ctx.fillStyle = isAlt ? '#111827' : '#1f2937';
+            ctx.fillRect(tx, ty, mSize, mSize);
+            ctx.strokeStyle = 'rgba(245, 158, 11, 0.35)';
+            ctx.strokeRect(tx, ty, mSize, mSize);
+
+            // 대리석 마블 결
+            ctx.fillStyle = 'rgba(254, 243, 199, 0.06)';
+            ctx.beginPath();
+            ctx.moveTo(tx + 4, ty + mSize - 6);
+            ctx.lineTo(tx + mSize - 8, ty + 6);
+            ctx.stroke();
+          }
+        }
+        // 금장 센터 보더 라인
+        ctx.fillStyle = '#f59e0b';
+        ctx.fillRect(16, wallH + 10, canvasW - 32, 2);
+        ctx.fillRect(16, canvasH - 12, canvasW - 32, 2);
+      } else if (tier === 3) {
+        // Tier 3 (사이버 메가 타워): 네온 그리드 카본 매트
+        ctx.fillStyle = '#060913';
+        ctx.fillRect(0, wallH + 3, canvasW, floorH - 3);
+        const gSize = 32;
+        ctx.strokeStyle = '#0f2438';
+        ctx.lineWidth = 1;
+        for (let gx = 0; gx < canvasW; gx += gSize) {
+          for (let gy = wallH + 3; gy < canvasH; gy += gSize) {
+            ctx.strokeRect(gx, gy, gSize, gSize);
+          }
+        }
+        // 사이버 네온 펄스 라인
+        ctx.fillStyle = 'rgba(6, 182, 212, 0.4)';
+        ctx.fillRect(0, wallH + 18, canvasW, 2);
+        ctx.fillStyle = '#06b6d4';
+        const pulseDot = (timeMs * 0.12) % canvasW;
+        ctx.fillRect(pulseDot, wallH + 17, 24, 4);
+      } else if (tier === 4) {
+        // Tier 4 (미스터 올림피아): 로열 대리석 + 중앙 레드 카펫 런웨이
+        ctx.fillStyle = '#1c1917';
+        ctx.fillRect(0, wallH + 3, canvasW, floorH - 3);
+        const carpetW = canvasW * 0.46;
+        const carpetX = (canvasW - carpetW) * 0.5;
+
+        // 측면 대리석
+        ctx.strokeStyle = '#292524';
+        for (let x = 0; x < canvasW; x += 32) {
+          ctx.beginPath();
+          ctx.moveTo(x, wallH + 3);
+          ctx.lineTo(x, canvasH);
+          ctx.stroke();
+        }
+        // 올림피아 레드 카펫
+        ctx.fillStyle = '#881337';
+        ctx.fillRect(carpetX, wallH + 3, carpetW, floorH - 3);
+        ctx.fillStyle = '#fbbf24';
+        ctx.fillRect(carpetX - 2, wallH + 3, 3, floorH - 3);
+        ctx.fillRect(carpetX + carpetW - 1, wallH + 3, 3, floorH - 3);
+      } else if (tier === 5) {
+        // Tier 5 (스카이 가든): 우드 데크 + 중앙 하이엔드 인조 잔디 러닝 트랙
+        ctx.fillStyle = '#78350f';
+        ctx.fillRect(0, wallH + 3, canvasW, floorH - 3);
+        const turfW = canvasW * 0.55;
+        const turfX = (canvasW - turfW) * 0.5;
+        ctx.fillStyle = '#047857';
+        ctx.fillRect(turfX, wallH + 3, turfW, floorH - 3);
+        ctx.fillStyle = '#10b981';
+        ctx.fillRect(turfX + turfW * 0.5 - 1, wallH + 3, 2, floorH - 3);
+      } else {
+        // Tier 6 & 7: 에어로스페이스 테크 패널 바닥
+        ctx.fillStyle = '#0b0f19';
+        ctx.fillRect(0, wallH + 3, canvasW, floorH - 3);
+        for (let px = 0; px < canvasW; px += 44) {
+          ctx.strokeStyle = '#1e293b';
+          ctx.strokeRect(px, wallH + 3, 44, floorH - 3);
+          ctx.fillStyle = '#0284c7';
+          ctx.fillRect(px + 20, wallH + 8, 4, 3);
+        }
+      }
+
+      // Water Purifier & Cup Station Prop (헬스장 필수 아이템 정수기)
+      const coolerX = canvasW - 28;
+      const coolerY = wallH + 18;
+      ctx.fillStyle = '#e2e8f0';
+      ctx.fillRect(coolerX, coolerY, 14, 26);
+      ctx.fillStyle = '#0284c7';
+      ctx.fillRect(coolerX + 2, coolerY - 10, 10, 10);
+      ctx.fillStyle = '#38bdf8';
+      ctx.fillRect(coolerX + 4, coolerY - 8, 6, 6);
+      ctx.fillStyle = '#ef4444';
+      ctx.fillRect(coolerX + 3, coolerY + 12, 3, 3);
+      ctx.fillStyle = '#3b82f6';
+      ctx.fillRect(coolerX + 8, coolerY + 12, 3, 3);
+
+      // Entrance Door & Rubber Welcome Mat
+      ctx.fillStyle = '#1e293b';
+      ctx.fillRect(10, canvasH - 58, 38, 50);
+      ctx.fillStyle = '#0284c7';
+      ctx.fillRect(14, canvasH - 54, 14, 22);
+      ctx.fillRect(30, canvasH - 54, 14, 22);
+      ctx.fillStyle = '#38bdf8';
+      ctx.fillRect(16, canvasH - 52, 10, 8);
+      ctx.fillRect(32, canvasH - 52, 10, 8);
+      // Entrance Welcome Mat
+      ctx.fillStyle = '#334155';
+      ctx.fillRect(10, canvasH - 7, 46, 7);
+      ctx.fillStyle = '#f59e0b';
+      ctx.fillRect(14, canvasH - 5, 38, 3);
+
+      // Draw All 14 Machines
+      const machineCoords = getMachineCoordinates();
+
+      GymState.machines.forEach(m => {
+        const pos = machineCoords[m.id];
+        if (!pos) return;
+
+        if (m.unlocked) {
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+          ctx.beginPath();
+          ctx.ellipse(pos.x, pos.y + 10, pos.w * 0.5, 7, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          if (m.id === 'dumbbell') {
+            ctx.fillStyle = '#334155';
+            ctx.fillRect(pos.x - 18, pos.y - 10, 36, 20);
+            ctx.fillStyle = '#94a3b8';
+            ctx.fillRect(pos.x - 14, pos.y - 6, 8, 4);
+            ctx.fillRect(pos.x + 6, pos.y - 6, 8, 4);
+          } else if (m.id === 'treadmill') {
+            ctx.fillStyle = '#1e293b';
+            ctx.fillRect(pos.x - 20, pos.y - 4, 40, 16);
+            ctx.fillStyle = '#38bdf8';
+            ctx.fillRect(pos.x + 8, pos.y - 18, 10, 6);
+            const beltOffset = (timeMs * 0.05) % 10;
+            ctx.fillStyle = '#475569';
+            ctx.fillRect(pos.x - 18 + beltOffset, pos.y - 1, 4, 10);
+          } else if (m.id === 'bench') {
+            ctx.fillStyle = '#475569';
+            ctx.fillRect(pos.x - 16, pos.y - 2, 32, 10);
+            ctx.fillStyle = '#cbd5e1';
+            ctx.fillRect(pos.x - 20, pos.y - 16, 40, 3);
+            ctx.fillStyle = '#ef4444';
+            ctx.fillRect(pos.x - 18, pos.y - 19, 4, 9);
+            ctx.fillRect(pos.x + 14, pos.y - 19, 4, 9);
+          } else if (m.id === 'lat_pulldown') {
+            ctx.fillStyle = '#334155';
+            ctx.fillRect(pos.x - 4, pos.y - 20, 8, 26);
+            ctx.fillStyle = '#0284c7';
+            ctx.fillRect(pos.x - 16, pos.y - 22, 32, 4);
+            ctx.fillStyle = '#1e293b';
+            ctx.fillRect(pos.x - 10, pos.y - 2, 20, 8);
+          } else if (m.id === 'squat') {
+            ctx.fillStyle = '#dc2626';
+            ctx.fillRect(pos.x - 16, pos.y - 22, 4, 32);
+            ctx.fillRect(pos.x + 12, pos.y - 22, 4, 32);
+            ctx.fillRect(pos.x - 16, pos.y - 22, 32, 4);
+            ctx.fillStyle = '#e2e8f0';
+            ctx.fillRect(pos.x - 18, pos.y - 8, 36, 3);
+          } else if (m.id === 'leg_press') {
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(pos.x - 18, pos.y - 12, 36, 20);
+            ctx.fillStyle = '#f59e0b';
+            ctx.fillRect(pos.x - 14, pos.y - 16, 12, 12);
+          } else if (m.id === 'cable') {
+            ctx.fillStyle = '#334155';
+            ctx.fillRect(pos.x - 18, pos.y - 22, 6, 28);
+            ctx.fillRect(pos.x + 12, pos.y - 22, 6, 28);
+            ctx.fillRect(pos.x - 18, pos.y - 22, 36, 4);
+            ctx.fillStyle = '#06b6d4';
+            ctx.fillRect(pos.x - 8, pos.y - 12, 16, 3);
+          } else if (m.id === 'stair') {
+            ctx.fillStyle = '#334155';
+            ctx.fillRect(pos.x - 14, pos.y - 16, 28, 24);
+            ctx.fillStyle = '#64748b';
+            ctx.fillRect(pos.x - 10, pos.y - 12, 20, 5);
+            ctx.fillRect(pos.x - 6, pos.y - 5, 16, 5);
+          } else if (m.id === 'rowing') {
+            ctx.fillStyle = '#1e293b';
+            ctx.fillRect(pos.x - 18, pos.y - 4, 36, 10);
+            ctx.fillStyle = '#38bdf8';
+            ctx.fillRect(pos.x + 8, pos.y - 12, 6, 10);
+          } else if (m.id === 'boxing') {
+            const punchSwing = Math.sin(timeMs * 0.006) * 3;
+            ctx.fillStyle = '#991b1b';
+            ctx.fillRect(pos.x - 7 + punchSwing, pos.y - 24, 14, 24);
+            ctx.fillStyle = '#e2e8f0';
+            ctx.fillRect(pos.x - 2, pos.y - 28, 4, 5);
+          } else if (m.id === 'pilates') {
+            ctx.fillStyle = '#78350f';
+            ctx.fillRect(pos.x - 18, pos.y - 8, 36, 14);
+            ctx.fillStyle = '#f472b6';
+            ctx.fillRect(pos.x - 12, pos.y - 12, 24, 6);
+          } else if (m.id === 'protein_bar') {
+            ctx.fillStyle = '#0284c7';
+            ctx.fillRect(pos.x - 18, pos.y - 10, 36, 20);
+            ctx.fillStyle = '#f59e0b';
+            ctx.fillRect(pos.x - 12, pos.y - 16, 6, 7);
+            ctx.fillStyle = '#10b981';
+            ctx.fillRect(pos.x - 2, pos.y - 16, 6, 7);
+          } else if (m.id === 'cryo') {
+            ctx.fillStyle = '#0284c7';
+            ctx.fillRect(pos.x - 14, pos.y - 22, 28, 30);
+            ctx.fillStyle = '#bae6fd';
+            ctx.fillRect(pos.x - 8, pos.y - 16, 16, 18);
+          } else if (m.id === 'sauna') {
+            ctx.fillStyle = '#78350f';
+            ctx.fillRect(pos.x - 18, pos.y - 16, 36, 26);
+            ctx.fillStyle = '#fef08a';
+            ctx.fillRect(pos.x - 10, pos.y - 10, 10, 14);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.fillRect(pos.x + 2, pos.y - 14, 4, 4);
+          }
+
+          ctx.fillStyle = '#f59e0b';
+          ctx.font = 'bold 9px monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText(`Lv.${m.level}`, pos.x, pos.y - 24);
+        } else {
+          ctx.fillStyle = 'rgba(15, 23, 42, 0.6)';
+          ctx.fillRect(pos.x - 18, pos.y - 10, 36, 20);
+          ctx.strokeStyle = '#334155';
+          ctx.strokeRect(pos.x - 18, pos.y - 10, 36, 20);
+          ctx.fillStyle = '#64748b';
+          ctx.font = '11px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('🔒', pos.x, pos.y + 4);
+        }
+      });
+
+      activeMembers.forEach(mem => {
+        const isWalking = mem.state === 'walking_to_machine' || mem.state === 'leaving';
+        const isExercising = mem.state === 'working_out';
+        
+        // 귀여운 뒤뚱뒤뚱 바운스 모션 (Waddle Hop)
+        const waddleBob = isWalking ? Math.abs(Math.sin(mem.animFrame * 1.6)) * 3 : 0;
+        const waddleTilt = isWalking ? Math.sin(mem.animFrame * 1.6) * 0.12 : 0;
+        const exerciseBob = isExercising ? Math.sin(mem.animFrame * 2.2) * 2.5 : 0;
+
+        const x = Math.round(mem.x);
+        const y = Math.round(mem.y - waddleBob + exerciseBob);
+        const p = mem.palette;
+        const isBlinking = Math.sin(mem.animFrame * 0.5) > 0.93;
+        const facing = mem.facing || 1;
+
+        // 부드러운 그림자 (바닥 접지감)
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+        ctx.beginPath();
+        ctx.ellipse(x, mem.y + 3, p.isBulky ? 12 : 10, 4, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.save();
+        ctx.translate(x, y);
+        if (waddleTilt !== 0) ctx.rotate(waddleTilt);
+
+        // VIP 럭셔리 황금 아우라 & 별빛 스파클
+        if (mem.isVip) {
+          ctx.fillStyle = 'rgba(251, 191, 36, 0.22)';
+          ctx.beginPath();
+          ctx.arc(0, -12, 19, 0, Math.PI * 2);
+          ctx.fill();
+
+          const sparkleT = (timeMs * 0.005) % (Math.PI * 2);
+          const spX = Math.cos(sparkleT) * 16;
+          const spY = Math.sin(sparkleT) * 14 - 12;
+          ctx.fillStyle = '#fef08a';
+          ctx.fillRect(spX - 1, spY - 1, 3, 3);
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(spX, spY, 1, 1);
+        }
+
+        if (p.isBulky) {
+          // [우람한 득근몬] 포동포동 든든한 곰돌이 체형
+          // 앙증맞은 통통 다리
+          ctx.fillStyle = p.pants;
+          ctx.fillRect(-7, -4, 5, 5);
+          ctx.fillRect(2, -4, 5, 5);
+          // 둥근 곰돌이 티셔츠 몸통
+          ctx.fillRect(-8, -13, 16, 10);
+          ctx.fillStyle = p.shirt;
+          ctx.fillRect(-8, -13, 16, 9);
+          // 아기 덤벨 / 프로틴 쉐이커
+          ctx.fillStyle = p.shaker;
+          ctx.fillRect(facing > 0 ? 8 : -11, -11, 4, 7);
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(facing > 0 ? 9 : -10, -13, 2, 2);
+
+          // 큼직한 둥글머리
+          ctx.fillStyle = p.skin;
+          ctx.fillRect(-7, -23, 14, 11);
+          // 헤어
+          ctx.fillStyle = p.hair;
+          ctx.fillRect(-8, -25, 16, 5);
+          ctx.fillRect(-8, -24, 2, 8);
+          ctx.fillRect(6, -24, 2, 8);
+        } else {
+          // [일반 회원 4종] 앙증맞은 2.5등신 치비 몸통
+          // 귀여운 아장아장 발 (걷는 중 교차 모션)
+          const legOffset = isWalking ? Math.sin(mem.animFrame * 1.6) * 2 : 0;
+          ctx.fillStyle = p.pants;
+          ctx.fillRect(-5, -3 + (legOffset > 0 ? -1 : 0), 4, 4);
+          ctx.fillRect(1, -3 + (legOffset < 0 ? -1 : 0), 4, 4);
+
+          // 앙증맞은 티셔츠/탑 바디
+          ctx.fillStyle = p.pants;
+          ctx.fillRect(-6, -8, 12, 5);
+          ctx.fillStyle = p.shirt;
+          ctx.fillRect(-6, -13, 12, 7);
+
+          // 둥글둥글 큼직한 귀여운 얼굴 (Head)
+          ctx.fillStyle = p.skin;
+          ctx.fillRect(-7, -24, 14, 12);
+          ctx.fillRect(-6, -25, 12, 14); // 둥근 모서리 보강
+
+          // 풍성하고 귀여운 헤어스타일
+          ctx.fillStyle = p.hair;
+          ctx.fillRect(-8, -26, 16, 6);
+          ctx.fillRect(-8, -24, 2, 8);
+          ctx.fillRect(6, -24, 2, 8);
+          if (p.hairHighlight) {
+            ctx.fillStyle = p.hairHighlight;
+            ctx.fillRect(-4, -25, 6, 2);
+          }
+        }
+
+        // 볼터치 (핑크빛 발그레 블러셔)
+        ctx.fillStyle = p.blush;
+        ctx.fillRect(-6, -17, 3, 2);
+        ctx.fillRect(3, -17, 3, 2);
+
+        // 초롱초롱한 눈동자 및 표정
+        if (isExercising) {
+          // 운동 중: 앙 다물고 힘주는 표정 (> <)
+          ctx.fillStyle = '#0f172a';
+          ctx.fillRect(-5, -20, 3, 2);
+          ctx.fillRect(2, -20, 3, 2);
+          // 앙다문 작은 입
+          ctx.fillRect(-1, -16, 2, 1);
+
+          // 머리 옆 방울방울 튀는 땀방울
+          if (Math.sin(mem.sweatTimer * 6) > 0.15) {
+            ctx.fillStyle = '#38bdf8';
+            ctx.fillRect(7, -25, 2, 3);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(7, -26, 1, 1);
+          }
+        } else if (isBlinking) {
+          // 깜빡이는 귀여운 선 눈 (- -)
+          ctx.fillStyle = '#0f172a';
+          ctx.fillRect(-5, -19, 3, 1);
+          ctx.fillRect(2, -19, 3, 1);
+        } else if (p.glasses) {
+          // 닥터슬럼프 스타일 똥글이 안경
+          ctx.fillStyle = p.glasses;
+          ctx.strokeRect(-6, -21, 5, 4);
+          ctx.strokeRect(1, -21, 5, 4);
+          ctx.fillRect(-1, -20, 2, 1);
+          // 안경 속 초롱초롱한 눈
+          ctx.fillStyle = '#0f172a';
+          ctx.fillRect(-4, -20, 2, 2);
+          ctx.fillRect(3, -20, 2, 2);
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(-4, -21, 1, 1);
+          ctx.fillRect(3, -21, 1, 1);
+        } else if (p.sunglasses) {
+          // VIP 도도한 미러 선글라스
+          ctx.fillStyle = '#0f172a';
+          ctx.fillRect(-6, -21, 5, 4);
+          ctx.fillRect(1, -21, 5, 4);
+          ctx.fillRect(-1, -20, 2, 1);
+          ctx.fillStyle = '#38bdf8';
+          ctx.fillRect(-5, -20, 2, 1);
+          ctx.fillRect(2, -20, 2, 1);
+        } else {
+          // 똘망똘망 초롱초롱 별빛 큰 눈망울 (초특급 큐트!)
+          ctx.fillStyle = '#0f172a';
+          ctx.fillRect(-5, -20, 3, 4);
+          ctx.fillRect(2, -20, 3, 4);
+          // 하이라이트 흰 반짝이
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(-5, -21, 1.5, 1.5);
+          ctx.fillRect(2, -21, 1.5, 1.5);
+          // 방긋 웃는 앙증맞은 입
+          ctx.fillStyle = '#e11d48';
+          ctx.fillRect(-1, -16, 2, 1);
+        }
+
+        if (p.sprout) {
+          // 병아리 헬린이: 머리 위에 흔들리는 아기 새싹 핀🌱
+          const spAngle = Math.sin(timeMs * 0.007) * 0.25;
+          ctx.save();
+          ctx.translate(0, -26);
+          ctx.rotate(spAngle);
+          ctx.fillStyle = '#15803d';
+          ctx.fillRect(0, -3, 2, 4);
+          ctx.fillStyle = p.sprout;
+          ctx.fillRect(-3, -5, 3, 2);
+          ctx.fillRect(1, -5, 3, 2);
+          ctx.restore();
+          // 빨간 이마 헤어밴드
+          ctx.fillStyle = p.headband;
+          ctx.fillRect(-7, -23, 14, 2);
+        }
+
+        if (p.rabbitEars) {
+          // 요가 요정: 쫑긋한 토끼 귀 머리띠🐰 & 포니테일
+          ctx.fillStyle = p.rabbitEars;
+          ctx.fillRect(-5, -31, 3, 6);
+          ctx.fillRect(2, -31, 3, 6);
+          ctx.fillStyle = '#fbcfe8';
+          ctx.fillRect(-4, -30, 1, 4);
+          ctx.fillRect(3, -30, 1, 4);
+          // 찰랑거리는 포니테일 댕기
+          ctx.fillStyle = p.hair;
+          ctx.fillRect(-9, -23, 3, 8);
+          ctx.fillStyle = '#f472b6';
+          ctx.fillRect(-9, -24, 2, 2);
+        }
+
+        if (p.crown) {
+          // 골드 VIP: 깜찍한 황금 미니 왕관👑
+          ctx.fillStyle = '#f59e0b';
+          ctx.fillRect(-5, -30, 10, 4);
+          ctx.fillStyle = '#fbbf24';
+          ctx.fillRect(-5, -32, 2, 3);
+          ctx.fillRect(-1, -33, 2, 4);
+          ctx.fillRect(3, -32, 2, 3);
+          ctx.fillStyle = '#ef4444';
+          ctx.fillRect(-1, -30, 2, 2);
+        }
+
+        if (p.tie) {
+          // 직장인: 삐뚤빼뚤 깜찍한 넥타이
+          ctx.fillStyle = p.tie;
+          ctx.fillRect(-1, -12, 2, 5);
+          ctx.fillRect(-0.5, -7, 1, 2);
+        }
+
+        // 퇴장 시 퐁퐁 솟아오르는 핑크 하트 이펙트 (💕)
+        if (mem.heartTimer > 0) {
+          const htY = -34 - ((1.8 - mem.heartTimer) * 12);
+          ctx.fillStyle = '#f43f5e';
+          ctx.beginPath();
+          ctx.arc(-2, htY, 2.5, 0, Math.PI * 2);
+          ctx.arc(2, htY, 2.5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.moveTo(-4.5, htY + 0.5);
+          ctx.lineTo(4.5, htY + 0.5);
+          ctx.lineTo(0, htY + 5);
+          ctx.closePath();
+          ctx.fill();
+        }
+
+        ctx.restore();
+      });
+
+      activeCoaches.forEach(c => {
+        const bob = Math.sin(c.animFrame * 1.5) * 2;
+        const x = Math.round(c.x);
+        const y = Math.round(c.y + bob);
+
+        // 부드러운 발밑 그림자
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+        ctx.beginPath();
+        ctx.ellipse(x, c.y + 3, 11, 4, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.save();
+        ctx.translate(x, y);
+
+        // 치비 SD 코치 바디
+        ctx.fillStyle = '#1e293b';
+        ctx.fillRect(-5, -3, 4, 4);
+        ctx.fillRect(1, -3, 4, 4);
+
+        if (c.typeId === 'trainer_kim') {
+          // 김관장: 정열의 레드 룩 + 불꽃 머리띠
+          ctx.fillStyle = '#dc2626';
+          ctx.fillRect(-6, -11, 12, 8);
+          ctx.fillStyle = '#fed7aa';
+          ctx.fillRect(-6, -21, 12, 10);
+          ctx.fillStyle = '#1e293b';
+          ctx.fillRect(-7, -23, 14, 5);
+          // 레드 헤어밴드 & 호루라기
+          ctx.fillStyle = '#ef4444';
+          ctx.fillRect(-7, -21, 14, 2);
+          ctx.fillStyle = '#facc15';
+          ctx.fillRect(-1, -10, 2, 3);
+        } else if (c.typeId === 'trainer_lee') {
+          // 이지은 코치: 민트 바이저 캡 + 포니테일
+          ctx.fillStyle = '#0d9488';
+          ctx.fillRect(-6, -11, 12, 8);
+          ctx.fillStyle = '#fed7aa';
+          ctx.fillRect(-6, -21, 12, 10);
+          ctx.fillStyle = '#7c2d12';
+          ctx.fillRect(-7, -23, 14, 5);
+          ctx.fillRect(5, -20, 3, 7);
+          // 바이저 챙
+          ctx.fillStyle = '#14b8a6';
+          ctx.fillRect(-8, -21, 15, 2);
+        } else if (c.typeId === 'trainer_choi') {
+          // 최머신 코치: 미래지향 사이버 트레이너 (로봇 안테나)
+          ctx.fillStyle = '#2563eb';
+          ctx.fillRect(-6, -11, 12, 8);
+          ctx.fillStyle = '#fed7aa';
+          ctx.fillRect(-6, -21, 12, 10);
+          ctx.fillStyle = '#1e3a8a';
+          ctx.fillRect(-7, -23, 14, 5);
+          // 안테나 & LED 라이트
+          ctx.fillStyle = '#64748b';
+          ctx.fillRect(-1, -27, 2, 4);
+          ctx.fillStyle = (Math.floor(timeMs / 250) % 2 === 0) ? '#06b6d4' : '#38bdf8';
+          ctx.fillRect(-1.5, -28.5, 3, 3);
+        } else if (c.typeId === 'trainer_sarah') {
+          // 사라 코치: 핑크 발레리나 룩
+          ctx.fillStyle = '#ec4899';
+          ctx.fillRect(-6, -11, 12, 8);
+          ctx.fillStyle = '#ffedd5';
+          ctx.fillRect(-6, -21, 12, 10);
+          ctx.fillStyle = '#f43f5e';
+          ctx.fillRect(-7, -23, 14, 5);
+          // 리본 번 헤어
+          ctx.fillStyle = '#fb7185';
+          ctx.fillRect(-2, -26, 4, 3);
+        } else {
+          // 마동석 총괄코치: 듬직하고 멋진 블랙 베스트 룩
+          ctx.fillStyle = '#0f172a';
+          ctx.fillRect(-7, -12, 14, 9);
+          ctx.fillStyle = '#fed7aa';
+          ctx.fillRect(-6, -22, 12, 10);
+          ctx.fillStyle = '#09090b';
+          ctx.fillRect(-7, -24, 14, 4);
+          // 호랑이 기운 골드 뱃지
+          ctx.fillStyle = '#fbbf24';
+          ctx.fillRect(-1, -10, 2, 3);
+        }
+
+        // 코치들의 반짝이는 눈과 친근한 미소
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(-4, -18, 2, 3);
+        ctx.fillRect(2, -18, 2, 3);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(-4, -19, 1, 1);
+        ctx.fillRect(2, -19, 1, 1);
+        // 살구빛 볼터치
+        ctx.fillStyle = '#f87171';
+        ctx.fillRect(-5, -15, 2, 1);
+        ctx.fillRect(3, -15, 2, 1);
+
+        // 코치 이름 명찰 태그
+        ctx.fillStyle = '#10b981';
+        ctx.font = 'bold 8px DungGeunMo, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(c.name.split(' ')[0], 0, -26);
+
+        // 코칭 스피치 말풍선
+        if (c.bubble) {
+          ctx.font = 'bold 9px DungGeunMo, sans-serif';
+          const txtW = ctx.measureText(c.bubble).width;
+          const bW = txtW + 10;
+          const bH = 16;
+          const bx = -bW * 0.5;
+          const by = -46;
+
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(bx, by, bW, bH);
+          ctx.strokeStyle = '#0f172a';
+          ctx.strokeRect(bx, by, bW, bH);
+          // 말풍선 꼬리
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(-2, by + bH - 1, 4, 3);
+          ctx.fillStyle = '#0f172a';
+          ctx.fillText(c.bubble, 0, by + 11);
+        }
+
+        ctx.restore();
+      });
+
+      // Floating Texts
+      for (let i = floatingTexts.length - 1; i >= 0; i--) {
+        const ft = floatingTexts[i];
+        ctx.save();
+        ctx.fillStyle = ft.color;
+        ctx.globalAlpha = Math.max(0, ft.life);
+        ctx.font = 'bold 12px DungGeunMo, monospace';
+        ctx.textAlign = 'center';
+        ctx.shadowColor = '#000';
+        ctx.shadowBlur = 4;
+        ctx.fillText(ft.text, ft.x, ft.y);
+        ctx.restore();
+
+        ft.y += ft.vy;
+        ft.life -= 0.022;
+        if (ft.life <= 0) floatingTexts.splice(i, 1);
+      }
+    }
+
+    function updateHUDLive() {
+      const hudGold = document.getElementById('hudGold');
+      if (hudGold) {
+        hudGold.textContent = `${formatNumber(GymState.gold)} G`;
+        hudGold.title = `정확한 골드: ${Math.floor(GymState.gold).toLocaleString('ko-KR')} G`;
+      }
+
+      const totalGps = calculateTotalGps();
+      const hudGps = document.getElementById('hudGps');
+      if (hudGps) hudGps.textContent = `+${formatGps(totalGps)} G/s`;
+
+      const claimableCount = checkClaimableMissionsCount();
+      const redDot = document.getElementById('missionRedDot');
+      if (redDot) {
+        if (claimableCount > 0) {
+          redDot.classList.remove('hidden');
+          redDot.textContent = claimableCount;
+        } else {
+          redDot.classList.add('hidden');
+        }
+      }
+
+      const overlayMemberCount = document.getElementById('overlayMemberCount');
+      if (overlayMemberCount) overlayMemberCount.textContent = activeMembers.length;
+
+      // 정원 동기화 (50명 제한 없음, 티어별 정원 즉시 반영)
+      const currentTier = GymState.tiers[GymState.currentTierIndex];
+      const maxCap = currentTier ? currentTier.maxMembers : GymState.maxMembers;
+      GymState.maxMembers = maxCap;
+
+      const overlayMax = document.getElementById('overlayMaxMemberCount');
+      if (overlayMax) overlayMax.textContent = maxCap;
+
+      const currentPower = getFlyerClickPower();
+      const clickBadge = document.getElementById('clickPowerBadge');
+      if (clickBadge) clickBadge.textContent = `+${formatNumber(currentPower)}G`;
+
+      const btnLabel = document.getElementById('btnClickFlyerLabel');
+      if (btnLabel) btnLabel.textContent = `전단지 돌리기! (+${formatNumber(currentPower)}G)`;
+
+      const statClickPower = document.getElementById('statClickPower');
+      if (statClickPower) statClickPower.textContent = `+${formatNumber(currentPower)}G`;
+
+      const spawnInterval = getMemberSpawnInterval();
+      const statSpawnRate = document.getElementById('statSpawnRate');
+      if (statSpawnRate) statSpawnRate.textContent = `${spawnInterval.toFixed(1)}초`;
+
+      const vipRate = Math.round(getVipChance() * 100);
+      const statVipRate = document.getElementById('statVipRate');
+      if (statVipRate) statVipRate.textContent = `${vipRate}%`;
+
+      const statCapacity = document.getElementById('statCapacity');
+      if (statCapacity) statCapacity.textContent = `${maxCap}명`;
+
+      // Pre-Workout Booster Bar
+      const feverFill = document.getElementById('feverBarFill');
+      const feverText = document.getElementById('feverPercentText');
+      const feverBadge = document.getElementById('feverBadge');
+      const simContainer = document.getElementById('simulatorContainer');
+
+      if (feverFill && feverText) {
+        const percent = Math.min(100, Math.floor(GymState.feverGauge));
+        feverFill.style.width = `${percent}%`;
+        feverText.textContent = `${percent}%`;
+
+        if (GymState.feverActive) {
+          feverBadge?.classList.remove('hidden');
+          simContainer?.classList.add('fever-active-border');
+        } else {
+          feverBadge?.classList.add('hidden');
+          simContainer?.classList.remove('fever-active-border');
+        }
+      }
+
+      const buyButtons = document.querySelectorAll('.action-buy-btn');
+      buyButtons.forEach(btn => {
+        const cost = parseFloat(btn.dataset.cost || '0');
+        btn.disabled = GymState.gold < cost;
+      });
+    }
+
+    function renderActiveTab() {
+      const container = document.getElementById('tabContainer');
+      if (!container) return;
+
+      if (GymState.activeTab === 'machines') {
+        container.innerHTML = GymState.machines.map(m => {
+          const cost = getMachineCost(m);
+          const gps = getMachineCurrentGps(m);
+          const canAfford = GymState.gold >= cost;
+
+          const boostCount = GymState.trainers.reduce((s, t) => s + (t.count > 0 && (t.boostType === 'all' || t.boostType === m.type) ? t.count : 0), 0);
+          const boostTag = boostCount > 0 ? `<span class="text-[9px] text-emerald-400 font-bold ml-1">(코치 버프 ×${boostCount})</span>` : '';
+
+          return `
+            <div class="bg-[#0b101d] border ${m.unlocked ? 'border-slate-700' : 'border-slate-800 opacity-85'} p-2 rounded flex items-center justify-between gap-2 shadow-sm">
+              <div class="flex items-center gap-2 min-w-0">
+                <div class="w-9 h-9 shrink-0 bg-slate-800 rounded flex items-center justify-center text-lg border border-slate-700">
+                  ${m.icon}
+                </div>
+                <div class="min-w-0">
+                  <div class="flex items-center gap-1.5 leading-tight">
+                    <span class="font-bold text-slate-100 text-xs truncate">${m.name}</span>
+                    <span class="text-[10px] text-amber-400 font-mono">Lv.${m.level}</span>
+                  </div>
+                  <div class="text-[10px] text-slate-400 mt-0.5 truncate">
+                    ${m.unlocked ? `수익: <span class="text-emerald-400 font-bold font-mono">+${formatGps(gps)} G/s</span> ${boostTag}` : '🔒 미해금 기구'}
+                  </div>
+                </div>
+              </div>
+              <button 
+                data-action="buy-machine" 
+                data-id="${m.id}" 
+                data-cost="${cost}" 
+                ${canAfford ? '' : 'disabled'}
+                class="action-buy-btn pixel-btn px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded shrink-0 whitespace-nowrap">
+                ${m.unlocked ? '강화' : '해금'} (${formatNumber(cost)}G)
+              </button>
+            </div>
+          `;
+        }).join('');
+      } else if (GymState.activeTab === 'marketing') {
+        const currentPower = getFlyerClickPower();
+        const spawnInterval = getMemberSpawnInterval();
+        const vipChance = Math.round(getVipChance() * 100);
+        const tipBonus = Math.round((getCheckoutTipMultiplier() - 1) * 100);
+        const insShield = Math.round((1 - getDisasterLossMultiplier()) * 100);
+        const sysShield = Math.round((1 - getDisasterChanceMultiplier()) * 100);
+
+        container.innerHTML = GymState.marketing.map(m => {
+          const isMaxed = m.maxLevel && m.level >= m.maxLevel;
+          const cost = getMarketingCost(m);
+          const canAfford = !isMaxed && GymState.gold >= cost;
+
+          let dynamicDesc = m.desc;
+          if (m.id === 'flyer_quality') {
+            dynamicDesc = `클릭당 획득 골드 +${m.bonusPerLv}G 증가 <span class="text-amber-400 font-bold font-mono">(현재: +${formatNumber(currentPower)}G)</span>`;
+          } else if (m.id === 'insurance') {
+            dynamicDesc = `재해 발생 시 골드 손실 경감 <span class="text-emerald-400 font-bold font-mono">(현재 방어율: ${insShield}%)</span>`;
+          } else if (m.id === 'disaster_system') {
+            dynamicDesc = `재해 및 사고 발생 확률 억제 <span class="text-cyan-400 font-bold font-mono">(현재 억제율: ${sysShield}%)</span>`;
+          } else if (m.id === 'sns_ad') {
+            dynamicDesc = `신규 회원 유입 주기 단축 <span class="text-cyan-400 font-bold font-mono">(현재: ${spawnInterval.toFixed(1)}초)</span>`;
+          } else if (m.id === 'vip_pass') {
+            dynamicDesc = `VIP 회원 방문 확률 증가 <span class="text-amber-300 font-bold font-mono">(현재: ${vipChance}%)</span>`;
+          } else if (m.id === 'influencer') {
+            const infMult = Math.round((Math.pow(1.07, m.level) - 1) * 100);
+            dynamicDesc = `모든 기구 수익 +7% 증폭 <span class="text-emerald-400 font-bold font-mono">(현재: +${infMult}%)</span>`;
+          } else if (m.id === 'body_profile') {
+            dynamicDesc = `회원 퇴장 팁 +10% 증폭 <span class="text-amber-400 font-bold font-mono">(현재: +${tipBonus}%)</span>`;
+          }
+
+          return `
+            <div class="bg-[#0b101d] border border-slate-700 p-2 rounded flex items-center justify-between gap-2 shadow-sm">
+              <div class="min-w-0">
+                <div class="font-bold text-slate-200 text-xs flex items-center gap-1.5">
+                  <span>${m.name}</span>
+                  <span class="text-[10px] text-cyan-400 font-mono font-bold">${isMaxed ? 'MAX' : `Lv.${m.level}`}</span>
+                </div>
+                <div class="text-[10px] text-slate-400 mt-0.5">${dynamicDesc}</div>
+              </div>
+              <button 
+                data-action="buy-marketing" 
+                data-id="${m.id}" 
+                data-cost="${cost}" 
+                ${canAfford ? '' : 'disabled'}
+                class="action-buy-btn pixel-btn px-3 py-1.5 ${isMaxed ? 'bg-slate-700 text-slate-400' : 'bg-cyan-600 hover:bg-cyan-500 text-white'} font-bold text-xs rounded shrink-0 whitespace-nowrap">
+                ${isMaxed ? '최대 레벨' : `${formatNumber(cost)}G`}
+              </button>
+            </div>
+          `;
+        }).join('');
+      } else if (GymState.activeTab === 'trainers') {
+        container.innerHTML = GymState.trainers.map(t => {
+          const cost = getTrainerCost(t);
+          const canAfford = GymState.gold >= cost;
+          const totalBoost = Math.round((Math.pow(1 + t.multPerHire, t.count) - 1) * 100);
+
+          return `
+            <div class="bg-[#0b101d] border ${t.count > 0 ? 'border-emerald-600/70 bg-emerald-950/20' : 'border-slate-700'} p-2 rounded flex items-center justify-between gap-2 shadow-sm">
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="text-2xl shrink-0">${t.icon}</span>
+                <div class="min-w-0">
+                  <div class="font-bold text-slate-200 text-xs flex items-center gap-1.5 truncate">
+                    <span>${t.name}</span>
+                    <span class="text-[10px] bg-emerald-900 text-emerald-300 px-1.5 py-0.5 rounded font-bold font-mono">${t.count}명 활동 중</span>
+                  </div>
+                  <div class="text-[10px] text-slate-400 mt-0.5">
+                    ${t.desc} <span class="text-emerald-400 font-bold font-mono">(누적: +${totalBoost}%)</span>
+                  </div>
+                </div>
+              </div>
+              <button 
+                data-action="hire-trainer" 
+                data-id="${t.id}" 
+                data-cost="${cost}" 
+                ${canAfford ? '' : 'disabled'}
+                class="action-buy-btn pixel-btn px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded shrink-0 whitespace-nowrap">
+                추가 고용 (${formatNumber(cost)}G)
+              </button>
+            </div>
+          `;
+        }).join('');
+      } else if (GymState.activeTab === 'facility') {
+        container.innerHTML = GymState.tiers.map((tier, idx) => {
+          const isCurrent = GymState.currentTierIndex === idx;
+          const isUnlocked = GymState.currentTierIndex >= idx;
+          const canUpgrade = GymState.currentTierIndex === idx - 1 && GymState.gold >= tier.cost;
+
+          return `
+            <div class="bg-[#0b101d] border ${isCurrent ? 'border-amber-500 bg-amber-950/20' : isUnlocked ? 'border-emerald-800' : 'border-slate-700'} p-2 rounded flex items-center justify-between gap-2 shadow-sm">
+              <div class="min-w-0">
+                <div class="font-bold text-slate-200 text-xs flex items-center gap-1.5">
+                  <span>${tier.name}</span>
+                  ${isCurrent ? '<span class="text-[9px] bg-amber-900 text-amber-300 px-1 py-0.5 rounded font-bold">운영 중</span>' : ''}
+                </div>
+                <div class="text-[10px] text-slate-400 mt-0.5">${tier.desc}</div>
+                <div class="text-[10px] text-cyan-400 font-mono font-bold">수용 정원: ${tier.maxMembers}명</div>
+              </div>
+              ${isUnlocked ? `
+                <span class="text-xs text-emerald-400 font-bold px-2 py-1 shrink-0">달성 완료</span>
+              ` : `
+                <button 
+                  data-action="upgrade-facility" 
+                  data-tier="${idx}" 
+                  data-cost="${tier.cost}" 
+                  ${canUpgrade ? '' : 'disabled'}
+                  class="action-buy-btn pixel-btn px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs rounded shrink-0 whitespace-nowrap">
+                  확장 (${formatNumber(tier.cost)}G)
+                </button>
+              `}
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      if (!toast) return;
+      toast.textContent = msg;
+      toast.classList.remove('opacity-0', 'translate-y-3');
+      toast.classList.add('opacity-100', 'translate-y-0');
+      setTimeout(() => {
+        toast.classList.remove('opacity-100', 'translate-y-0');
+        toast.classList.add('opacity-0', 'translate-y-3');
+      }, 2200);
+    }
+
+    document.getElementById('tabContainer').addEventListener('click', (e) => {
+      const btn = e.target.closest('.action-buy-btn');
+      if (!btn || btn.disabled) return;
+
+      const action = btn.dataset.action;
+
+      if (action === 'buy-machine') {
+        const id = btn.dataset.id;
+        const m = GymState.machines.find(item => item.id === id);
+        if (!m) return;
+        const cost = getMachineCost(m);
+        if (GymState.gold >= cost) {
+          GymState.gold -= cost;
+          if (!m.unlocked) {
+            m.unlocked = true;
+            m.level = 1;
+            showToast(`🎉 ${m.name} 해금 완료!`);
+          } else {
+            m.level += 1;
+            showToast(`⚡ ${m.name} Lv.${m.level} 강화!`);
+          }
+          playSfx('upgrade');
+          renderActiveTab();
+          updateHUDLive();
+          saveGame();
+        }
+      } else if (action === 'buy-marketing') {
+        const id = btn.dataset.id;
+        const m = GymState.marketing.find(item => item.id === id);
+        if (!m || (m.maxLevel && m.level >= m.maxLevel)) return;
+        const cost = getMarketingCost(m);
+        if (GymState.gold >= cost) {
+          GymState.gold -= cost;
+          m.level += 1;
+          playSfx('upgrade');
+
+          if (m.id === 'insurance') {
+            showToast(`🛡️ 영업배상 보험 강화 완료! (피해 방어율 ${m.level * 12}%)`);
+          } else if (m.id === 'disaster_system') {
+            showToast(`🚨 스마트 방재 설비 업그레이드! (재해 억제율 ${m.level * 10}%)`);
+          } else {
+            showToast(`📢 ${m.name} Lv.${m.level} 달성!`);
+          }
+
+          renderActiveTab();
+          updateHUDLive();
+          saveGame();
+        }
+      } else if (action === 'hire-trainer') {
+        const id = btn.dataset.id;
+        const t = GymState.trainers.find(item => item.id === id);
+        if (!t) return;
+        const cost = getTrainerCost(t);
+        if (GymState.gold >= cost) {
+          GymState.gold -= cost;
+          t.count += 1;
+          playSfx('upgrade');
+          syncCoaches();
+          showToast(`👨‍🏫 ${t.name} 추가 영입 완료! (총 ${t.count}명)`);
+          renderActiveTab();
+          updateHUDLive();
+          saveGame();
+        }
+      } else if (action === 'upgrade-facility') {
+        const tierIdx = parseInt(btn.dataset.tier, 10);
+        const tier = GymState.tiers[tierIdx];
+        if (!tier) return;
+        if (GymState.gold >= tier.cost && GymState.currentTierIndex === tierIdx - 1) {
+          GymState.gold -= tier.cost;
+          GymState.currentTierIndex = tierIdx;
+          GymState.maxMembers = tier.maxMembers;
+          
+          document.getElementById('gymTierBadge').textContent = tier.name;
+          document.getElementById('gymTitleOverlay').textContent = `🏢 ${tier.name}`;
+          playSfx('upgrade');
+          showToast(`🏢 헬스장 확장 완료! (${tier.name})`);
+          renderActiveTab();
+          updateHUDLive();
+          saveGame();
+        }
+      }
+    });
+
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => {
+          b.className = 'tab-btn py-1.5 rounded bg-transparent hover:bg-slate-800 text-slate-300 flex items-center justify-center gap-1';
+        });
+        btn.className = 'tab-btn py-1.5 rounded bg-amber-500 text-slate-950 shadow flex items-center justify-center gap-1 font-bold';
+        GymState.activeTab = btn.dataset.tab;
+        renderActiveTab();
+        updateHUDLive();
+      });
+    });
+
+    function triggerFlyerClick(e) {
+      GymState.flyerClicks += 1;
+      const power = getFlyerClickPower();
+      GymState.gold += power;
+      GymState.totalEarned += power;
+
+      // 난이도 상향: 클릭당 피버 충전율 3.5 -> 2.0%로 조정
+      if (!GymState.feverActive) {
+        GymState.feverGauge = Math.min(100, GymState.feverGauge + 2.0);
+        if (GymState.feverGauge >= 100) {
+          GymState.feverActive = true;
+          GymState.feverTimer = 10; // 15초 -> 10초
+          playSfx('fever');
+          showToast('🔥 부스터 피버 모드 발동! 10초간 1.7배 가속!');
+        }
+      }
+
+      playSfx('coin');
+
+      const clickX = e && e.clientX ? e.clientX : canvasW * 0.5;
+      const clickY = e && e.clientY ? e.clientY : canvasH * 0.5;
+      const rect = canvas.getBoundingClientRect();
+      const localX = Math.max(30, Math.min(canvasW - 30, clickX - rect.left));
+      const localY = Math.max(30, Math.min(canvasH - 30, clickY - rect.top));
+      addFloatingText(localX, localY, `+${formatNumber(power)}G`, GymState.feverActive ? '#ef4444' : '#fbbf24');
+
+      if (Math.random() < 0.50) {
+        spawnMember(true);
+      }
+      updateHUDLive();
+    }
+
+    document.getElementById('btnClickFlyer').addEventListener('click', (e) => triggerFlyerClick(e));
+    document.getElementById('canvasWrapper').addEventListener('click', (e) => triggerFlyerClick(e));
+
+    document.getElementById('btnSoundToggle').addEventListener('click', () => {
+      soundEnabled = !soundEnabled;
+      document.getElementById('btnSoundToggle').textContent = soundEnabled ? '🔊' : '🔇';
+      showToast(soundEnabled ? '사운드 켜짐' : '사운드 음소거');
+    });
+
+    document.getElementById('btnFullscreen').addEventListener('click', async () => {
+      try {
+        if (!document.fullscreenElement) {
+          await document.documentElement.requestFullscreen();
+          // Portrait is the default mobile layout; do not force landscape.
+          if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock();
+        } else {
+          await document.exitFullscreen();
+        }
+      } catch (e) {}
+    });
+
+    document.addEventListener('fullscreenchange', () => {
+      const btn = document.getElementById('btnFullscreen');
+      if (btn) {
+        btn.textContent = document.fullscreenElement ? '⛶' : '⛶';
+        btn.title = document.fullscreenElement ? '전체화면 종료' : '전체화면';
+      }
+      requestAnimationFrame(resizeCanvas);
+    });
+
+    const resetModal = document.getElementById('resetModal');
+    document.getElementById('btnResetData').addEventListener('click', () => {
+      resetModal.classList.remove('hidden');
+    });
+    document.getElementById('btnCancelReset').addEventListener('click', () => {
+      resetModal.classList.add('hidden');
+    });
+    document.getElementById('btnConfirmReset').addEventListener('click', () => {
+      localStorage.removeItem(STORAGE_KEY);
+      location.reload();
+    });
+
+    function renderMissions() {
+      const list = document.getElementById('missionList');
+      if (!list) return;
+
+      list.innerHTML = GymState.missions.map(m => {
+        const isMaxed = m.stage >= m.targets.length;
+        if (isMaxed) {
+          return `
+            <div class="bg-[#090d16] border border-slate-800 opacity-60 p-2.5 rounded flex items-center justify-between gap-2">
+              <div class="min-w-0">
+                <div class="font-bold text-slate-300 text-xs flex items-center gap-1.5">
+                  <span>${m.icon} ${m.title}</span>
+                  <span class="text-[10px] text-emerald-400 font-mono font-bold">[최종 단계 완료]</span>
+                </div>
+                <div class="text-[10px] text-slate-400 mt-0.5">모든 미션 단계를 완전히 정복했습니다!</div>
+              </div>
+              <span class="text-xs text-emerald-500 font-bold px-2 py-1">완료됨</span>
+            </div>
+          `;
+        }
+
+        const currentTarget = m.targets[m.stage];
+        const currentReward = m.rewards[m.stage];
+        const currentProgress = m.getProgress();
+        const isReadyToClaim = currentProgress >= currentTarget;
+        const stageLabel = `${m.stage + 1}단계`;
+
+        return `
+          <div class="bg-[#090d16] border ${isReadyToClaim ? 'border-amber-400 shadow-md ring-1 ring-amber-500/50' : 'border-slate-700'} p-2.5 rounded flex items-center justify-between gap-2">
+            <div class="min-w-0">
+              <div class="font-bold text-slate-200 text-xs flex items-center gap-1.5">
+                <span>${m.icon} ${m.title}</span>
+                <span class="text-[10px] bg-indigo-950 text-indigo-300 px-1.5 py-0.5 rounded font-mono font-bold">${stageLabel}</span>
+                <span class="text-[10px] text-amber-400 font-mono">(${formatNumber(Math.min(currentProgress, currentTarget))}/${formatNumber(currentTarget)})</span>
+              </div>
+              <div class="text-[10px] text-slate-400 mt-0.5">${m.desc(currentTarget)}</div>
+              <div class="text-[10px] text-amber-300 font-bold mt-1">보상: +${formatNumber(currentReward)}G</div>
+            </div>
+            ${isReadyToClaim ? `
+              <button data-mission="${m.id}" class="btn-claim-mission pixel-btn px-3 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs rounded shrink-0 shadow animate-pulse">
+                보상 수령
+              </button>
+            ` : `
+              <span class="text-xs text-slate-500 font-bold px-2 py-1">진행 중</span>
+            `}
+          </div>
+        `;
+      }).join('');
+
+      document.querySelectorAll('.btn-claim-mission').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const mId = btn.dataset.mission;
+          const m = GymState.missions.find(item => item.id === mId);
+          if (!m || m.stage >= m.targets.length) return;
+
+          const currentTarget = m.targets[m.stage];
+          const currentReward = m.rewards[m.stage];
+          const progress = m.getProgress();
+
+          if (progress >= currentTarget) {
+            GymState.gold += currentReward;
+            GymState.totalEarned += currentReward;
+            playSfx('coin');
+            showToast(`🎁 ${m.title} ${m.stage + 1}단계 보상 (+${formatNumber(currentReward)}G) 수령!`);
+            m.stage += 1;
+            renderMissions();
+            updateHUDLive();
+            saveGame();
+          }
+        });
+      });
+    }
+
+    const missionModal = document.getElementById('missionModal');
+    document.getElementById('btnMissions').addEventListener('click', () => {
+      renderMissions();
+      missionModal.classList.remove('hidden');
+    });
+    document.getElementById('btnCloseMission').addEventListener('click', () => {
+      missionModal.classList.add('hidden');
+    });
+    missionModal.addEventListener('click', (e) => {
+      if (e.target === missionModal) missionModal.classList.add('hidden');
+    });
+
+    let lastTime = performance.now();
+    let spawnTimer = 0;
+    let autoSaveTimer = 0;
+    let disasterCheckTimer = 0;
+
+    function gameLoop(now) {
+      const dt = Math.min((now - lastTime) / 1000, 0.1);
+      lastTime = now;
+
+      // Active Disaster Visual Dismiss Timer
+      if (GymState.activeDisasterTimer > 0) {
+        GymState.activeDisasterTimer -= dt;
+        if (GymState.activeDisasterTimer <= 0) {
+          document.getElementById('disasterBanner')?.classList.add('hidden');
+          document.getElementById('disasterFlash')?.classList.add('hidden');
+        }
+      }
+
+      // Natural Disaster Random Roll (난이도 및 재해 로직)
+      if (GymState.disasterCooldown > 0) {
+        GymState.disasterCooldown -= dt;
+      } else {
+        disasterCheckTimer += dt;
+        // 12초마다 재해 확률 체크 (기본 약 22% 확률)
+        if (disasterCheckTimer >= 12.0) {
+          disasterCheckTimer = 0;
+          const rollChance = 0.24 * getDisasterChanceMultiplier();
+          if (Math.random() < rollChance) {
+            triggerDisaster();
+            GymState.disasterCooldown = 35 + Math.random() * 40; // 다음 재해까지 최소 35초 쿨타임
+          }
+        }
+      }
+
+      if (GymState.feverActive) {
+        GymState.feverTimer -= dt;
+        GymState.feverGauge = (GymState.feverTimer / 10) * 100;
+        if (GymState.feverTimer <= 0) {
+          GymState.feverActive = false;
+          GymState.feverGauge = 0;
+          showToast('부스터 피버 모드가 종료되었습니다.');
+        }
+      } else if (GymState.feverGauge > 0) {
+        GymState.feverGauge = Math.max(0, GymState.feverGauge - dt * 2.5);
+      }
+
+      const totalGps = calculateTotalGps();
+      if (totalGps > 0) {
+        const earned = totalGps * dt;
+        GymState.gold += earned;
+        GymState.totalEarned += earned;
+      }
+
+      spawnTimer += dt;
+      const targetInterval = getMemberSpawnInterval();
+      if (spawnTimer >= targetInterval) {
+        spawnTimer = 0;
+        spawnMember();
+      }
+
+      autoSaveTimer += dt;
+      if (autoSaveTimer >= 5.0) {
+        autoSaveTimer = 0;
+        saveGame();
+      }
+
+      updateMembers(dt);
+      updateCoaches(dt);
+      drawGymScene();
+      updateHUDLive();
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    function init() {
+      loadGame();
+      resizeCanvas();
+      syncCoaches();
+
+      const currentTier = GymState.tiers[GymState.currentTierIndex];
+      if (currentTier) {
+        document.getElementById('gymTierBadge').textContent = currentTier.name;
+        document.getElementById('gymTitleOverlay').textContent = `🏢 ${currentTier.name}`;
+      }
+
+      renderActiveTab();
+      updateHUDLive();
+
+      setTimeout(() => spawnMember(), 100);
+      setTimeout(() => spawnMember(), 350);
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    if (document.readyState === 'loading') {
+      window.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  </script>
+</body>
+</html>
